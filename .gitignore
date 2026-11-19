@@ -1,0 +1,22 @@
+# Build output (arduino-cli / Arduino IDE / PlatformIO)
+build/
+.pio/
+*.bin
+*.elf
+*.map
+*.hex
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backups
+*.bak
+*.orig
