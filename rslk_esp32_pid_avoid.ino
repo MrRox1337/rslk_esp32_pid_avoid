@@ -11,11 +11,40 @@
         turn > 0 veers RIGHT, turn < 0 veers LEFT, speed 0 + turn = spin in place
   - HC-SR04 obstacle avoidance (ECHO through a 1k/2k divider, or use HC-SR04P)
   - Serial console at 115200, "Newline" line ending. Type "help".
+  - Web control: the ESP32 makes its own WiFi network (AP_SSID / AP_PASS below).
+    Join it, then open http://192.168.4.1 in a browser. Same commands as Serial,
+    plus a hold-to-drive pad (robot stops if you let go or the link drops).
 */
 
 #include <Arduino.h>
+#include <WiFi.h>
+#include <WebServer.h>
 #include "driver/pulse_cnt.h"
 #include "driver/gpio.h"
+
+// ======================= WIFI =======================
+const char *AP_SSID = "RSLK-ESP32";
+const char *AP_PASS = "rslk1234";       // min 8 chars (WPA2)
+const uint16_t WEB_DRIVE_TIMEOUT_MS = 500;   // pad stops robot if no update this long
+
+WebServer server(80);
+
+// Everything printed through `con` goes to Serial AND (while capturing) to the web reply
+class TeePrint : public Print {
+public:
+  String buf;
+  bool capture = false;
+  size_t write(uint8_t c) override {
+    Serial.write(c);
+    if (capture && buf.length() < 2048) buf += (char)c;
+    return 1;
+  }
+  size_t write(const uint8_t *b, size_t n) override {
+    for (size_t i = 0; i < n; i++) write(b[i]);
+    return n;
+  }
+};
+TeePrint con;
 
 // ======================= PINS =======================
 const int PWML = 25, DIRL = 26, SLPL = 27;    // left  DRV8838
@@ -94,6 +123,9 @@ AvoidState avoidState = CRUISE;
 unsigned long stateT0 = 0;
 int spinDir = 1;
 float manSpeed = 0, manTurn = 0;
+bool  webDrive = false;                 // MANUAL mode driven by the web pad (dead-man)
+unsigned long lastWebDrive = 0;
+volatile bool clientDropped = false;    // set from WiFi event when a client leaves the AP
 
 // ======================= ENCODERS (PCNT) =======================
 const int PCNT_LIMIT = 30000;
@@ -257,7 +289,7 @@ void avoidStep() {
 // ======================= CALIBRATION =======================
 void calibrate() {
   mode = IDLE;
-  Serial.println("CAL: both motors PWM 200 for 2 s. Wheels off the ground or give it room.");
+  con.println("CAL: both motors PWM 200 for 2 s. Wheels off the ground or give it room.");
   delay(1000);
   setMotors(200, 200);
   delay(500);
@@ -272,12 +304,12 @@ void calibrate() {
   FLIP_ENC_R = tr < 0;
   MAX_TPS = min(fabs(tl), fabs(tr)) * 255.0 / 200.0;
 
-  Serial.printf("Left raw ticks/s: %.1f   Right raw ticks/s: %.1f\n", tl, tr);
-  Serial.printf("-> FLIP_ENC_L = %s\n-> FLIP_ENC_R = %s\n-> MAX_TPS = %.1f\n",
+  con.printf("Left raw ticks/s: %.1f   Right raw ticks/s: %.1f\n", tl, tr);
+  con.printf("-> FLIP_ENC_L = %s\n-> FLIP_ENC_R = %s\n-> MAX_TPS = %.1f\n",
                 FLIP_ENC_L ? "true" : "false", FLIP_ENC_R ? "true" : "false", MAX_TPS);
-  Serial.println("Applied live. Hard-code these at the top of the sketch.");
-  Serial.println("If a wheel spun BACKWARDS, set its FLIP_MOTOR_x = true, re-upload, run cal again.");
-  if (tl == 0 || tr == 0) Serial.println("WARNING: an encoder read 0 ticks - check wiring.");
+  con.println("Applied live. Hard-code these at the top of the sketch.");
+  con.println("If a wheel spun BACKWARDS, set its FLIP_MOTOR_x = true, re-upload, run cal again.");
+  if (tl == 0 || tr == 0) con.println("WARNING: an encoder read 0 ticks - check wiring.");
 
   readEncoders(l0, r0);
   posL = lastPosL = FLIP_ENC_L ? -l0 : l0;
@@ -288,14 +320,14 @@ void calibrate() {
 
 // ======================= SERIAL CONSOLE =======================
 void printHelp() {
-  Serial.println("go | stop | m S T (manual speed,turn) | cal | sync 0/1 | tele 0/1");
-  Serial.println("kp/ki/kd X (wheel PID) | sp/si/sd X (sync PID) | cruise X | gains");
+  con.println("go | stop | m S T (manual speed,turn) | cal | sync 0/1 | tele 0/1");
+  con.println("kp/ki/kd X (wheel PID) | sp/si/sd X (sync PID) | cruise X | gains");
 }
 
 void printGains() {
-  Serial.printf("wheel kp,ki,kd = %.3f, %.3f, %.3f\n", pidL.kp, pidL.ki, pidL.kd);
-  Serial.printf("sync  kp,ki,kd = %.3f, %.3f, %.3f\n", pidSync.kp, pidSync.ki, pidSync.kd);
-  Serial.printf("MAX_TPS = %.1f\n", MAX_TPS);
+  con.printf("wheel kp,ki,kd = %.3f, %.3f, %.3f\n", pidL.kp, pidL.ki, pidL.kd);
+  con.printf("sync  kp,ki,kd = %.3f, %.3f, %.3f\n", pidSync.kp, pidSync.ki, pidSync.kd);
+  con.printf("MAX_TPS = %.1f\n", MAX_TPS);
 }
 
 void runCmd(char *s) {
@@ -304,6 +336,7 @@ void runCmd(char *s) {
   char *a = strtok(NULL, " ");
   char *b = strtok(NULL, " ");
   float x = a ? atof(a) : 0, y = b ? atof(b) : 0;
+  webDrive = false;   // any typed command takes over from the web drive pad
 
   if      (!strcmp(cmd, "go"))     { mode = AUTO; setAvoidState(CRUISE); }
   else if (!strcmp(cmd, "stop"))   { mode = IDLE; }
@@ -336,6 +369,134 @@ void handleSerial() {
   }
 }
 
+// ======================= WEB CONTROL =======================
+const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RSLK Control</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--fg:#1d2330;--mut:#6b7280;--line:#d9dce3;--acc:#2563eb;--go:#16a34a;--stop:#dc2626}
+@media(prefers-color-scheme:dark){:root{--bg:#111318;--card:#1b1e25;--fg:#e6e8ee;--mut:#9aa1ad;--line:#2c313b;--acc:#60a5fa;--go:#22c55e;--stop:#ef4444}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px system-ui,sans-serif}
+main{max-width:560px;margin:0 auto;padding:16px;display:grid;gap:12px}
+h1{font-size:18px;margin:0}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat div{font-size:12px;color:var(--mut)}
+.stat b{display:block;font-size:17px;color:var(--fg);font-variant-numeric:tabular-nums}
+.row{display:flex;gap:8px;flex-wrap:wrap}button{flex:1;min-width:64px;padding:12px 8px;font:inherit;font-weight:600;
+border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);cursor:pointer;touch-action:none;user-select:none}
+button:active,button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.go{background:var(--go);color:#fff;border:0}.stop{background:var(--stop);color:#fff;border:0}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.pad button{padding:20px 0;font-size:20px}
+label{font-size:13px;color:var(--mut);display:flex;align-items:center;gap:8px}input[type=range]{flex:1}
+form{display:flex;gap:8px}input[type=text]{flex:1;min-width:0;padding:10px;font:14px ui-monospace,monospace;
+border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}form button{flex:0 0 auto}
+pre{margin:8px 0 0;height:180px;overflow:auto;font:12px/1.4 ui-monospace,monospace;background:var(--bg);
+border-radius:8px;padding:8px;white-space:pre-wrap}#link{font-size:12px;color:var(--mut)}
+</style></head><body><main>
+<div class="row" style="align-items:center"><h1 style="flex:1">RSLK Control</h1><span id="link">connecting…</span></div>
+<div class="card stat">
+<div>Mode<b id="mode">–</b></div><div>Distance<b id="dist">–</b></div><div>Sync err<b id="sync">–</b></div>
+<div>L tgt / vel<b id="l">–</b></div><div>R tgt / vel<b id="r">–</b></div><div>PWM L / R<b id="pwm">–</b></div>
+</div>
+<div class="card row"><button class="go" data-c="go">GO (auto)</button><button class="stop" data-c="stop">STOP</button>
+<button data-c="cal">Calibrate</button><button data-c="gains">Gains</button></div>
+<div class="card"><div class="pad" id="pad">
+<button data-s="1" data-t="-.5">↖</button><button data-s="1" data-t="0">↑</button><button data-s="1" data-t=".5">↗</button>
+<button data-s="0" data-t="-1">⟲</button><button class="stop" data-c="stop">■</button><button data-s="0" data-t="1">⟳</button>
+<button data-s="-1" data-t="-.5">↙</button><button data-s="-1" data-t="0">↓</button><button data-s="-1" data-t=".5">↘</button>
+</div><label style="margin-top:10px">Speed <input type="range" id="spd" min="60" max="230" value="140"><span id="spdv">140</span></label>
+<div style="font-size:12px;color:var(--mut);margin-top:4px">Hold a button to drive; release to stop.</div></div>
+<div class="card"><form id="f"><input type="text" id="c" placeholder="command, e.g. kp 0.05  |  m 120 0  |  help" autocomplete="off" autocapitalize="off"><button>Send</button></form>
+<pre id="log"></pre></div>
+</main><script>
+const $=id=>document.getElementById(id),log=$('log');
+function out(t){log.textContent+=t;log.scrollTop=log.scrollHeight}
+async function cmd(c){out('> '+c+'\n');try{const r=await fetch('/cmd?c='+encodeURIComponent(c));out(await r.text())}catch(e){out('(no reply)\n')}}
+document.querySelectorAll('[data-c]').forEach(b=>b.addEventListener('click',()=>{stopPad();cmd(b.dataset.c)}));
+$('f').onsubmit=e=>{e.preventDefault();const c=$('c').value.trim();if(c)cmd(c);$('c').value=''};
+const spd=$('spd');spd.oninput=()=>$('spdv').textContent=spd.value;
+let timer=null,held=null;
+function send(){const v=+spd.value;fetch('/drive?s='+Math.round(held.dataset.s*v)+'&t='+Math.round(held.dataset.t*v)).catch(()=>{})}
+function stopPad(){if(!held)return;clearInterval(timer);held.classList.remove('on');held=null;fetch('/cmd?c=stop').catch(()=>{})}
+document.querySelectorAll('#pad [data-s]').forEach(b=>{
+ b.addEventListener('pointerdown',e=>{e.preventDefault();stopPad();held=b;b.classList.add('on');send();timer=setInterval(send,150)});
+ ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stopPad))});
+document.addEventListener('visibilitychange',stopPad);
+let busy=false;setInterval(async()=>{if(busy)return;busy=true;try{const s=await (await fetch('/status')).json();
+$('mode').textContent=s.mode;$('dist').textContent=s.dist.toFixed(0)+' cm';$('sync').textContent=s.sync.toFixed(0);
+$('l').textContent=s.tgtL.toFixed(0)+' / '+s.velL.toFixed(0);$('r').textContent=s.tgtR.toFixed(0)+' / '+s.velR.toFixed(0);
+$('pwm').textContent=s.outL+' / '+s.outR;$('link').textContent='connected'}catch(e){$('link').textContent='no link'}busy=false},300);
+</script></body></html>)HTML";
+
+void handleRoot() { server.send_P(200, "text/html", INDEX_HTML); }
+
+void handleCmd() {
+  char buf[64];
+  strncpy(buf, server.arg("c").c_str(), sizeof(buf) - 1);
+  buf[sizeof(buf) - 1] = 0;
+  con.buf = "";
+  con.capture = true;
+  runCmd(buf);
+  con.capture = false;
+  server.send(200, "text/plain", con.buf.length() ? con.buf : String("ok\n"));
+  con.buf = "";
+}
+
+void handleDrive() {
+  mode = MANUAL;
+  float s = server.arg("s").toFloat(), t = server.arg("t").toFloat();
+  if (!webDrive || s != manSpeed || t != manTurn) resetSync();
+  manSpeed = s; manTurn = t;
+  webDrive = true;
+  lastWebDrive = millis();
+  server.send(200, "text/plain", "ok");
+}
+
+void handleStatus() {
+  static const char *modeNames[]  = {"IDLE", "AUTO", "MANUAL"};
+  static const char *avoidNames[] = {"cruise", "backup", "spin"};
+  char m[24];
+  if (mode == AUTO) snprintf(m, sizeof(m), "AUTO/%s", avoidNames[avoidState]);
+  else              snprintf(m, sizeof(m), "%s", modeNames[mode]);
+  char j[200];
+  snprintf(j, sizeof(j),
+           "{\"mode\":\"%s\",\"dist\":%.1f,\"tgtL\":%.0f,\"velL\":%.0f,\"tgtR\":%.0f,\"velR\":%.0f,"
+           "\"sync\":%.0f,\"outL\":%d,\"outR\":%d}",
+           m, distCm, tgtL, velL, tgtR, velR, syncErr, outL, outR);
+  server.send(200, "application/json", j);
+}
+
+void setupWeb() {
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(AP_SSID, AP_PASS);
+  WiFi.setSleep(false);                       // lower latency for driving
+  WiFi.onEvent([](WiFiEvent_t, WiFiEventInfo_t) { clientDropped = true; },
+               ARDUINO_EVENT_WIFI_AP_STADISCONNECTED);
+
+  server.on("/", handleRoot);
+  server.on("/cmd", handleCmd);
+  server.on("/drive", handleDrive);
+  server.on("/status", handleStatus);
+  server.onNotFound([]() { server.sendHeader("Location", "/"); server.send(302); });
+  server.begin();
+
+  Serial.printf("WiFi AP \"%s\" (pass \"%s\") -> open http://%s\n",
+                AP_SSID, AP_PASS, WiFi.softAPIP().toString().c_str());
+}
+
+void webStep() {
+  server.handleClient();
+  if (webDrive && millis() - lastWebDrive > WEB_DRIVE_TIMEOUT_MS) {   // dead-man release
+    webDrive = false;
+    mode = IDLE;
+  }
+  if (clientDropped) {          // someone left the AP: stop, to be safe
+    clientDropped = false;
+    webDrive = false;
+    mode = IDLE;
+    Serial.println("WiFi client disconnected -> STOP");
+  }
+}
+
 // ======================= SETUP / LOOP =======================
 void setup() {
   Serial.begin(115200);
@@ -353,6 +514,8 @@ void setup() {
   pcntL = setupEncoder(ELA, ELB);
   pcntR = setupEncoder(ERA, ERB);
 
+  setupWeb();
+
   Serial.println("RSLK + ESP32 ready. Type 'cal' first, then 'go'.");
   printHelp();
 }
@@ -363,6 +526,7 @@ void loop() {
   unsigned long now = millis();
 
   handleSerial();
+  webStep();
 
   if (now - lastSonar >= SONAR_MS) {
     lastSonar = now;
