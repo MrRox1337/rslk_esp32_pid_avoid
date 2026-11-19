@@ -31,7 +31,7 @@ border-radius:8px;padding:8px;white-space:pre-wrap}#link{font-size:12px;color:va
 <div>L tgt / vel<b id="l">–</b></div><div>R tgt / vel<b id="r">–</b></div><div>PWM L / R<b id="pwm">–</b></div>
 </div>
 <div class="card row"><button class="go" data-c="go">GO (auto)</button><button class="stop" data-c="stop">STOP</button>
-<button data-c="cal">Calibrate</button><button data-c="gains">Gains</button></div>
+<button data-c="cal">Calibrate</button><button data-c="gains">Gains</button><button data-c="save">Save</button></div>
 <div class="card"><div class="pad" id="pad">
 <button data-s="1" data-t="-.5">↖</button><button data-s="1" data-t="0">↑</button><button data-s="1" data-t=".5">↗</button>
 <button data-s="0" data-t="-1">⟲</button><button class="stop" data-c="stop">■</button><button data-s="0" data-t="1">⟳</button>

@@ -13,6 +13,7 @@
     sonar.*       HC-SR04 with median filter
     behavior.*    IDLE / AUTO (obstacle avoidance) / MANUAL modes
     console.*     text commands (Serial + web), telemetry
+    settings.*    save/load tuned values to flash (Preferences / NVS)
     web.*         WiFi AP + web server; web_page.h is the HTML
 
   Serial: 115200, "Newline" line ending. Type "help".
@@ -26,10 +27,12 @@
 #include "sonar.h"
 #include "behavior.h"
 #include "console.h"
+#include "settings.h"
 #include "web.h"
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
+  settingsLoad(Serial);   // saved gains/calibration override config.h defaults
 
   motorsBegin();
   encodersBegin();
