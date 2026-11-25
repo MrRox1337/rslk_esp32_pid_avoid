@@ -3,8 +3,8 @@
 #include "motors.h"
 #include "encoders.h"
 
-PID pidL   (WHEEL_PID_GAINS);
-PID pidR   (WHEEL_PID_GAINS);
+PID pidL   (WHEEL_PID_GAINS, WHEEL_I_ZONE);
+PID pidR   (WHEEL_PID_GAINS, WHEEL_I_ZONE);
 PID pidSync(SYNC_PID_GAINS);
 bool syncEnabled = true;
 

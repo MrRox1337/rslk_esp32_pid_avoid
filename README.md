@@ -69,6 +69,7 @@ The same commands work over serial and on the web page.
 | `m S T` | Manual drive: speed `S`, turn `T` (-255..255; `T` > 0 veers right) |
 | `cal` | Calibrate `MAX_TPS` and encoder directions (blocks for about 3 s) |
 | `kp` / `ki` / `kd X` | Wheel velocity PID gains |
+| `iz X` | Wheel integral zone in ticks/s: the integrator only runs while the error is below this (0 = always) |
 | `sp` / `si` / `sd X` | Wheel-sync PID gains |
 | `sync 0/1` | Turn the wheel-sync PID off / on |
 | `cruise X` | Cruise speed in AUTO mode |

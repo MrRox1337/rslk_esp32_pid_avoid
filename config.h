@@ -27,6 +27,7 @@ inline float MAX_TPS = 4800.0f;        // ticks/s at PWM 255 (4x counting) -> "c
 
 // PID gains (kp, ki, kd, integral limit) -- see control.cpp
 #define WHEEL_PID_GAINS 0.04f, 0.25f, 0.0f, 120.0f    // ticks/s error -> PWM
+#define WHEEL_I_ZONE    0.0f    // ticks/s; wheel integrator only runs inside this error band (0 = off)
 #define SYNC_PID_GAINS  4.0f,  1.0f,  0.0f, 1200.0f   // tick error -> ticks/s correction
 
 // ======================= OBSTACLE AVOIDANCE =======================

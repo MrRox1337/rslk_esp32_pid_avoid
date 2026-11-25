@@ -15,6 +15,7 @@ void settingsLoad(Print &out) {
   pidL.kp = pidR.kp = prefs.getFloat("kp", pidL.kp);
   pidL.ki = pidR.ki = prefs.getFloat("ki", pidL.ki);
   pidL.kd = pidR.kd = prefs.getFloat("kd", pidL.kd);
+  pidL.iZone = pidR.iZone = prefs.getFloat("iz", pidL.iZone);
   pidSync.kp  = prefs.getFloat("sp", pidSync.kp);
   pidSync.ki  = prefs.getFloat("si", pidSync.ki);
   pidSync.kd  = prefs.getFloat("sd", pidSync.kd);
@@ -33,6 +34,7 @@ void settingsSave(Print &out) {
   prefs.putFloat("kp", pidL.kp);
   prefs.putFloat("ki", pidL.ki);
   prefs.putFloat("kd", pidL.kd);
+  prefs.putFloat("iz", pidL.iZone);
   prefs.putFloat("sp", pidSync.kp);
   prefs.putFloat("si", pidSync.ki);
   prefs.putFloat("sd", pidSync.kd);
