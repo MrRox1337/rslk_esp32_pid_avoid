@@ -17,19 +17,19 @@ constexpr uint8_t  PWM_BITS = 8;       // duty 0..255
 // ============ DIRECTION FIXES (set after running "cal") ============
 inline bool FLIP_MOTOR_L = false;
 inline bool FLIP_MOTOR_R = false;
-inline bool FLIP_ENC_L   = false;
-inline bool FLIP_ENC_R   = false;
+inline bool FLIP_ENC_L   = true;
+inline bool FLIP_ENC_R   = true;
 
 // ======================= CONTROL =======================
 constexpr uint16_t LOOP_MS   = 10;     // 100 Hz control loop
 constexpr float    VEL_ALPHA = 0.3f;   // velocity low-pass filter
-inline float MAX_TPS = 4800.0f;        // ticks/s at PWM 255 (4x counting) -> "cal" measures it
-inline float ACCEL_TPS2 = 0.0f;        // setpoint ramp, ticks/s per second (0 = off) -> "acc X"
+inline float MAX_TPS = 2825.4f;        // ticks/s at PWM 255 (4x counting) -> "cal" measures it
+inline float ACCEL_TPS2 = 20000.0f;    // setpoint ramp, ticks/s per second (0 = off) -> "acc X"
 
 // PID gains (kp, ki, kd, integral limit) -- see control.cpp
-#define WHEEL_PID_GAINS 0.04f, 0.25f, 0.0f, 120.0f    // ticks/s error -> PWM
-#define WHEEL_I_ZONE    0.0f    // ticks/s; wheel integrator only runs inside this error band (0 = off)
-#define SYNC_PID_GAINS  4.0f,  1.0f,  0.0f, 1200.0f   // tick error -> ticks/s correction
+#define WHEEL_PID_GAINS 0.15f, 1.0f, 0.002f, 120.0f   // ticks/s error -> PWM
+#define WHEEL_I_ZONE    250.0f   // ticks/s; wheel integrator only runs inside this error band (0 = off)
+#define SYNC_PID_GAINS  12.0f, 1.0f,  0.0f, 1200.0f  // tick error -> ticks/s correction
 
 // ======================= OBSTACLE AVOIDANCE =======================
 inline int CRUISE_SPEED = 150;
