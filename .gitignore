@@ -27,6 +27,3 @@ __pycache__/
 
 # WiFi credentials
 wifi_secrets.h
-
-# Flight recorder downloads
-logs/
