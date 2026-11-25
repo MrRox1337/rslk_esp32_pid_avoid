@@ -81,6 +81,21 @@ The same commands work over serial and on the web page.
 
 Saved values take priority over `config.h`. If you change a default in `config.h`, run `defaults` to use it.
 
+## PID tuner
+
+[`tools/pid_tuner.py`](tools/pid_tuner.py) runs step tests over USB serial and shows them on a live dashboard.
+It needs Python 3 and `pyserial`. Close the Arduino serial monitor first, since only one program can use the port.
+
+```sh
+python tools/pid_tuner.py --port COM3      # then open http://localhost:8765
+curl "localhost:8765/test?kind=step&speed=150&sync=0"       # wheel step test
+curl "localhost:8765/test?kind=sync&speed=120&turn=60"      # sync test (turning)
+curl "localhost:8765/cmd?c=kp%200.15"                       # any console command
+```
+
+Each run reports rise time, overshoot, settling time, steady-state error, ripple and PWM saturation. Runs are
+saved as CSV, JSON and SVG in `tools/tune_runs/`. Opening the port resets the ESP32, so any unsaved gains are lost.
+
 ## Code layout
 
 | File | Purpose |
@@ -96,3 +111,4 @@ Saved values take priority over `config.h`. If you change a default in `config.h
 | `console.*` | Command interpreter (serial and web), telemetry |
 | `settings.*` | Saving and loading settings in flash |
 | `web.*`, `web_page.h` | WiFi access point, HTTP endpoints, control page |
+| `tools/pid_tuner.py` | PC-side step-test runner and live tuning dashboard |

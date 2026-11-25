@@ -20,3 +20,7 @@ desktop.ini
 # Backups
 *.bak
 *.orig
+
+# PID tuner run logs
+tools/tune_runs/
+__pycache__/
