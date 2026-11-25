@@ -5,7 +5,7 @@ Firmware for a **TI-RSLK MAX** chassis (Pololu motor driver and power distributi
 
 - Encoders are counted in hardware by the ESP32 PCNT peripheral (full 4x quadrature, no interrupts).
 - Each wheel has a velocity PID with feedforward. A wheel-sync PID keeps the robot driving straight and turning exactly as commanded.
-- Autonomous obstacle avoidance uses an HC-SR04 ultrasonic sensor: the robot cruises, slows down as it approaches an obstacle, then backs up and spins until the way is clear.
+- Autonomous obstacle avoidance uses an HC-SR04 ultrasonic sensor: the robot holds its lane and **overtakes** obstacles like a car does (see [Auto mode](#auto-mode-overtaking)).
 - You can control it from the **USB serial console** or from a **web page served by the ESP32 itself**.
 - Tuned gains and calibration values are saved in flash (Preferences/NVS), so they survive power cycles.
 
@@ -55,9 +55,23 @@ You can change both in `config.h`. Join the network and open **http://192.168.4.
 
 - Live status: mode, distance, target and actual speed of each wheel, sync error, PWM
 - GO / STOP / Calibrate / Gains / Save buttons
-- A hold-to-drive pad with a speed slider. The robot stops when you release the button, after 500 ms without
+- A hold-to-drive pad with a speed slider. The slider also sets the AUTO cruise speed, is saved to flash 3 s after you stop moving it, and is restored when the page loads. The robot stops when you release the button, after 500 ms without
   updates, or when a device disconnects from the WiFi network.
 - A command box that accepts any console command and shows its output
+
+## Auto mode (overtaking)
+
+`go` starts AUTO mode. The lane is the line the robot is pointing along at that moment, and wheel odometry keeps it on that line.
+
+1. **Cruise**: drive straight at the slider speed.
+2. **Overtake**: when the sonar sees something closer than `PASS_CM` (60 cm), the robot pulls out smoothly to a passing lane `LANE_CM`
+   (30 cm) to the side and keeps going. The sonar can't see the obstacle once the robot is beside it, so odometry decides when it
+   has been passed: the sonar distance plus `OBST_LEN_CM` plus `ROBOT_LEN_CM`.
+3. **Merge**: the robot eases back into its original lane, taking as long as it spent pulling out and passing. Then it goes back to cruising.
+
+Steering is proportional to the speed, so the robot follows the same path at any cruise speed. If something is closer than
+`STOP_CM` while cruising, or closer than `PASS_STOP_CM` while overtaking, the robot backs up and spins instead, as it did before.
+The sideways offset is shown as *Lane offset* on the web page. The geometry constants and `PASS_SIDE` are in `config.h`.
 
 ## Console commands
 

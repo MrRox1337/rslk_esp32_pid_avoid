@@ -14,5 +14,6 @@ extern int   outL, outR;
 // speed, turn in PWM units (-255..255): turn > 0 veers RIGHT, speed 0 + turn = spin
 void drive(float speed, float turn);
 void resetSync();
+void getPositions(long &l, long &r);   // wheel travel in ticks (+ = forward)
 void controlUpdate();             // call every loop; runs the PID at LOOP_MS
 void calibrate(Print &out);       // blocking ~3 s; measures MAX_TPS and encoder directions

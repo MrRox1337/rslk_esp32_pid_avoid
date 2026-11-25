@@ -50,6 +50,12 @@ void settingsSave(Print &out) {
   out.println("Settings saved to flash.");
 }
 
+void settingsSaveCruise() {
+  prefs.begin(NS, false);
+  if (prefs.getInt("cruise", -1) != CRUISE_SPEED) prefs.putInt("cruise", CRUISE_SPEED);
+  prefs.end();
+}
+
 void settingsClear(Print &out) {
   prefs.begin(NS, false);
   prefs.clear();

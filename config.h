@@ -31,13 +31,28 @@ inline float ACCEL_TPS2 = 20000.0f;    // setpoint ramp, ticks/s per second (0 =
 #define WHEEL_I_ZONE    250.0f   // ticks/s; wheel integrator only runs inside this error band (0 = off)
 #define SYNC_PID_GAINS  12.0f, 1.0f,  0.0f, 1200.0f  // tick error -> ticks/s correction
 
+// ======================= GEOMETRY (odometry) =======================
+// RSLK MAX / Romi: 70 mm wheels, 1440 ticks per wheel turn (4x counting), 141 mm track.
+constexpr float TICKS_PER_CM = 65.5f;
+constexpr float TRACK_CM     = 14.1f;   // wheel centre to wheel centre
+
 // ======================= OBSTACLE AVOIDANCE =======================
-inline int CRUISE_SPEED = 150;
-constexpr int   MIN_SPEED  = 70;
+inline int CRUISE_SPEED = 150;          // web speed slider; saved to flash on change
+// Overtake: pull out to a lane LANE_CM to the side, pass, then merge back.
+constexpr float PASS_CM      = 60;      // start overtaking when an obstacle is this close
+constexpr float LANE_CM      = 30;      // sideways shift of the passing lane
+constexpr int   PASS_SIDE    = +1;      // +1 = overtake on the right, -1 = on the left
+constexpr float OBST_LEN_CM  = 20;      // assumed obstacle length (sonar can't see it once beside it)
+constexpr float ROBOT_LEN_CM = 15;      // robot must clear the obstacle by this much before merging
+constexpr float PASS_MARGIN_CM = 10;    // be fully in the passing lane this far before the obstacle
+constexpr float STEER_GAIN   = 1.0f;    // turn = speed * gain * heading error (rad)
+constexpr float LOOK_CM      = 20;      // lane-keeping look-ahead (bigger = gentler corrections)
+constexpr float MAX_HEAD_RAD = 0.7f;    // ~40 deg max heading away from the lane
+// Fallback when something is too close to pass: back up and spin.
 constexpr int   BACK_SPEED = 110;
 constexpr int   SPIN_SPEED = 110;
-constexpr float SLOW_CM    = 50;
-constexpr float STOP_CM    = 20;
+constexpr float STOP_CM    = 20;        // cruising: closer than this -> back up instead
+constexpr float PASS_STOP_CM = 10;      // overtaking: closer than this -> abort, back up
 constexpr float CLEAR_CM   = 45;
 constexpr uint16_t BACKUP_MS   = 400;
 constexpr uint16_t SPIN_MIN_MS = 250;
@@ -48,6 +63,7 @@ constexpr uint16_t SONAR_MS    = 60;
 constexpr char AP_SSID[] = "RSLK-ESP32";
 constexpr char AP_PASS[] = "rslk1234";              // min 8 chars (WPA2)
 constexpr uint16_t WEB_DRIVE_TIMEOUT_MS = 500;      // pad stops robot if no update this long
+constexpr uint16_t SPEED_SAVE_MS = 3000;            // save the speed slider once it has been still this long
 
 // ======================= CONSOLE =======================
 constexpr uint32_t SERIAL_BAUD  = 115200;

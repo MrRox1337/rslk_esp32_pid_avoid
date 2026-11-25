@@ -29,6 +29,7 @@ border-radius:8px;padding:8px;white-space:pre-wrap}#link{font-size:12px;color:va
 <div class="card stat">
 <div>Mode<b id="mode">–</b></div><div>Distance<b id="dist">–</b></div><div>Sync err<b id="sync">–</b></div>
 <div>L tgt / vel<b id="l">–</b></div><div>R tgt / vel<b id="r">–</b></div><div>PWM L / R<b id="pwm">–</b></div>
+<div>Lane offset<b id="lane">–</b></div>
 </div>
 <div class="card row"><button class="go" data-c="go">GO (auto)</button><button class="stop" data-c="stop">STOP</button>
 <button data-c="cal">Calibrate</button><button data-c="gains">Gains</button><button data-c="save">Save</button></div>
@@ -36,8 +37,8 @@ border-radius:8px;padding:8px;white-space:pre-wrap}#link{font-size:12px;color:va
 <button data-s="1" data-t="-.5">↖</button><button data-s="1" data-t="0">↑</button><button data-s="1" data-t=".5">↗</button>
 <button data-s="0" data-t="-1">⟲</button><button class="stop" data-c="stop">■</button><button data-s="0" data-t="1">⟳</button>
 <button data-s="-1" data-t="-.5">↙</button><button data-s="-1" data-t="0">↓</button><button data-s="-1" data-t=".5">↘</button>
-</div><label style="margin-top:10px">Speed <input type="range" id="spd" min="60" max="230" value="140"><span id="spdv">140</span></label>
-<div style="font-size:12px;color:var(--mut);margin-top:4px">Hold a button to drive; release to stop.</div></div>
+</div><label style="margin-top:10px">Speed <input type="range" id="spd" min="60" max="230" value="150"><span id="spdv">150</span></label>
+<div style="font-size:12px;color:var(--mut);margin-top:4px">Hold a button to drive; release to stop. The speed is also the GO cruise speed and is saved.</div></div>
 <div class="card"><form id="f"><input type="text" id="c" placeholder="command, e.g. kp 0.05  |  m 120 0  |  help" autocomplete="off" autocapitalize="off"><button>Send</button></form>
 <pre id="log"></pre></div>
 </main><script>
@@ -46,7 +47,8 @@ function out(t){log.textContent+=t;log.scrollTop=log.scrollHeight}
 async function cmd(c){out('> '+c+'\n');try{const r=await fetch('/cmd?c='+encodeURIComponent(c));out(await r.text())}catch(e){out('(no reply)\n')}}
 document.querySelectorAll('[data-c]').forEach(b=>b.addEventListener('click',()=>{stopPad();cmd(b.dataset.c)}));
 $('f').onsubmit=e=>{e.preventDefault();const c=$('c').value.trim();if(c)cmd(c);$('c').value=''};
-const spd=$('spd');spd.oninput=()=>$('spdv').textContent=spd.value;
+const spd=$('spd');let spdSynced=false;spd.oninput=()=>{spdSynced=true;$('spdv').textContent=spd.value};
+spd.onchange=()=>fetch('/speed?v='+spd.value).catch(()=>{});
 let timer=null,held=null;
 function send(){const v=+spd.value;fetch('/drive?s='+Math.round(held.dataset.s*v)+'&t='+Math.round(held.dataset.t*v)).catch(()=>{})}
 function stopPad(){if(!held)return;clearInterval(timer);held.classList.remove('on');held=null;fetch('/cmd?c=stop').catch(()=>{})}
@@ -57,5 +59,6 @@ document.addEventListener('visibilitychange',stopPad);
 let busy=false;setInterval(async()=>{if(busy)return;busy=true;try{const s=await (await fetch('/status')).json();
 $('mode').textContent=s.mode;$('dist').textContent=s.dist.toFixed(0)+' cm';$('sync').textContent=s.sync.toFixed(0);
 $('l').textContent=s.tgtL.toFixed(0)+' / '+s.velL.toFixed(0);$('r').textContent=s.tgtR.toFixed(0)+' / '+s.velR.toFixed(0);
-$('pwm').textContent=s.outL+' / '+s.outR;$('link').textContent='connected'}catch(e){$('link').textContent='no link'}busy=false},300);
+$('pwm').textContent=s.outL+' / '+s.outR;$('lane').textContent=s.lane.toFixed(0)+' cm';
+if(!spdSynced){spdSynced=true;spd.value=s.cruise;$('spdv').textContent=spd.value}$('link').textContent='connected'}catch(e){$('link').textContent='no link'}busy=false},300);
 </script></body></html>)HTML";

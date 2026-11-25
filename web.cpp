@@ -6,10 +6,12 @@
 #include "control.h"
 #include "behavior.h"
 #include "sonar.h"
+#include "settings.h"
 #include "web_page.h"
 
 static WebServer server(80);
 static volatile bool clientDropped = false;   // set from WiFi event task
+static unsigned long speedChangedAt = 0;      // pending slider save (0 = none)
 
 static void handleRoot() { server.send_P(200, "text/html", INDEX_HTML); }
 
@@ -30,12 +32,20 @@ static void handleDrive() {
   server.send(200, "text/plain", "ok");
 }
 
+// Speed slider: becomes the AUTO cruise speed. Saved to flash SPEED_SAVE_MS after the last
+// change, so a burst of adjustments costs one write.
+static void handleSpeed() {
+  CRUISE_SPEED = constrain(server.arg("v").toInt(), 0, 255);
+  speedChangedAt = millis() | 1;
+  server.send(200, "text/plain", "ok");
+}
+
 static void handleStatus() {
-  char j[200];
+  char j[256];
   snprintf(j, sizeof(j),
            "{\"mode\":\"%s\",\"dist\":%.1f,\"tgtL\":%.0f,\"velL\":%.0f,\"tgtR\":%.0f,\"velR\":%.0f,"
-           "\"sync\":%.0f,\"outL\":%d,\"outR\":%d}",
-           modeName(), distCm, tgtL, velL, tgtR, velR, syncErr, outL, outR);
+           "\"sync\":%.0f,\"outL\":%d,\"outR\":%d,\"cruise\":%d,\"lane\":%.1f}",
+           modeName(), distCm, tgtL, velL, tgtR, velR, syncErr, outL, outR, CRUISE_SPEED, laneY);
   server.send(200, "application/json", j);
 }
 
@@ -50,6 +60,7 @@ void webBegin() {
   server.on("/cmd", handleCmd);
   server.on("/drive", handleDrive);
   server.on("/status", handleStatus);
+  server.on("/speed", handleSpeed);
   server.onNotFound([]() { server.sendHeader("Location", "/"); server.send(302); });
   server.begin();
 
@@ -59,6 +70,10 @@ void webBegin() {
 
 void webStep() {
   server.handleClient();
+  if (speedChangedAt && millis() - speedChangedAt >= SPEED_SAVE_MS) {
+    speedChangedAt = 0;
+    settingsSaveCruise();
+  }
   if (clientDropped) {          // someone left the AP: stop, to be safe
     clientDropped = false;
     stopRobot();

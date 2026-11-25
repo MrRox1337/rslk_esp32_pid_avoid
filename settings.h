@@ -9,3 +9,4 @@ extern bool settingsDirty;          // live values differ from what's saved
 void settingsLoad(Print &out);      // call once in setup()
 void settingsSave(Print &out);
 void settingsClear(Print &out);     // erase saved values (defaults apply after reboot)
+void settingsSaveCruise();         // store CRUISE_SPEED only (web speed slider)

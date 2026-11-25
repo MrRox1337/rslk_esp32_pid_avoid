@@ -2,10 +2,12 @@
 // High-level modes: IDLE, AUTO (obstacle avoidance), MANUAL (speed/turn command).
 
 enum Mode { IDLE, AUTO, MANUAL };
-enum AvoidState { CRUISE, BACKUP, SPIN };
+// CRUISE: hold the lane. PASS_OUT: pull out and pass. PASS_BACK: merge back. BACKUP/SPIN: fallback.
+enum AvoidState { CRUISE, PASS_OUT, PASS_BACK, BACKUP, SPIN };
 
 extern Mode mode;
 extern AvoidState avoidState;
+extern float laneY;      // odometry: sideways offset from the lane in cm (+ = right)
 
 void stopRobot();
 void startAuto();

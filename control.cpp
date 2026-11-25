@@ -28,6 +28,8 @@ void resetSync() {
   syncErr = 0;
 }
 
+void getPositions(long &l, long &r) { l = posL; r = posR; }
+
 static int wheelOut(float setpoint, float vel, PID &pid, float dt) {
   float ff = setpoint / MAX_TPS * 255.0;
   float u  = ff + pid.update(setpoint - vel, dt);
