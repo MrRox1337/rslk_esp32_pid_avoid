@@ -23,7 +23,7 @@ size_t TeePrint::write(const uint8_t *b, size_t n) {
 
 void printHelp() {
   con.println("go | stop | m S T (manual speed,turn) | cal | sync 0/1 | tele 0/1/ms");
-  con.println("kp/ki/kd/iz X (wheel PID) | sp/si/sd X (sync PID) | cruise X | gains");
+  con.println("kp/ki/kd/iz X (wheel PID) | sp/si/sd X (sync PID) | cruise X | acc X (ramp) | gains");
   con.println("save (to flash) | load (from flash) | defaults (erase saved + reboot)");
 }
 
@@ -31,8 +31,8 @@ static void printGains() {
   con.printf("wheel kp,ki,kd = %.3f, %.3f, %.3f  izone = %.0f\n", pidL.kp, pidL.ki, pidL.kd, pidL.iZone);
   con.printf("sync  kp,ki,kd = %.3f, %.3f, %.3f  (%s)\n", pidSync.kp, pidSync.ki, pidSync.kd,
              syncEnabled ? "on" : "off");
-  con.printf("MAX_TPS = %.1f  flipEnc L/R = %d/%d  cruise = %d\n",
-             MAX_TPS, FLIP_ENC_L, FLIP_ENC_R, CRUISE_SPEED);
+  con.printf("MAX_TPS = %.1f  flipEnc L/R = %d/%d  cruise = %d  accel = %.0f\n",
+             MAX_TPS, FLIP_ENC_L, FLIP_ENC_R, CRUISE_SPEED, ACCEL_TPS2);
   if (settingsDirty) con.println("(unsaved changes - type 'save' to keep them)");
 }
 
@@ -52,6 +52,7 @@ void runCmd(char *s) {
   else if (!strcmp(cmd, "ki"))     { pidL.ki = pidR.ki = x; pidL.reset(); pidR.reset(); }
   else if (!strcmp(cmd, "kd"))     { pidL.kd = pidR.kd = x; }
   else if (!strcmp(cmd, "iz"))     { pidL.iZone = pidR.iZone = x; }
+  else if (!strcmp(cmd, "acc"))    { ACCEL_TPS2 = x; }
   else if (!strcmp(cmd, "sp"))     { pidSync.kp = x; }
   else if (!strcmp(cmd, "si"))     { pidSync.ki = x; pidSync.reset(); }
   else if (!strcmp(cmd, "sd"))     { pidSync.kd = x; }

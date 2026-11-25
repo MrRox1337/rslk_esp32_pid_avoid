@@ -21,6 +21,7 @@ void settingsLoad(Print &out) {
   pidSync.kd  = prefs.getFloat("sd", pidSync.kd);
   syncEnabled = prefs.getBool("sync", syncEnabled);
   MAX_TPS     = prefs.getFloat("maxtps", MAX_TPS);
+  ACCEL_TPS2  = prefs.getFloat("accel", ACCEL_TPS2);
   FLIP_ENC_L  = prefs.getBool("flipEncL", FLIP_ENC_L);
   FLIP_ENC_R  = prefs.getBool("flipEncR", FLIP_ENC_R);
   CRUISE_SPEED = prefs.getInt("cruise", CRUISE_SPEED);
@@ -40,6 +41,7 @@ void settingsSave(Print &out) {
   prefs.putFloat("sd", pidSync.kd);
   prefs.putBool("sync", syncEnabled);
   prefs.putFloat("maxtps", MAX_TPS);
+  prefs.putFloat("accel", ACCEL_TPS2);
   prefs.putBool("flipEncL", FLIP_ENC_L);
   prefs.putBool("flipEncR", FLIP_ENC_R);
   prefs.putInt("cruise", CRUISE_SPEED);

@@ -24,6 +24,7 @@ inline bool FLIP_ENC_R   = false;
 constexpr uint16_t LOOP_MS   = 10;     // 100 Hz control loop
 constexpr float    VEL_ALPHA = 0.3f;   // velocity low-pass filter
 inline float MAX_TPS = 4800.0f;        // ticks/s at PWM 255 (4x counting) -> "cal" measures it
+inline float ACCEL_TPS2 = 0.0f;        // setpoint ramp, ticks/s per second (0 = off) -> "acc X"
 
 // PID gains (kp, ki, kd, integral limit) -- see control.cpp
 #define WHEEL_PID_GAINS 0.04f, 0.25f, 0.0f, 120.0f    // ticks/s error -> PWM

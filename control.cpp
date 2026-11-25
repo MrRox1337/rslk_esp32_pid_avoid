@@ -46,15 +46,25 @@ static void controlStep(float dt) {
   velL += VEL_ALPHA * (rawL - velL);
   velR += VEL_ALPHA * (rawR - velR);
 
-  tgtL = (cmdSpeed + cmdTurn) / 255.0 * MAX_TPS;
-  tgtR = (cmdSpeed - cmdTurn) / 255.0 * MAX_TPS;
+  float wantL = (cmdSpeed + cmdTurn) / 255.0 * MAX_TPS;
+  float wantR = (cmdSpeed - cmdTurn) / 255.0 * MAX_TPS;
 
-  if (tgtL == 0 && tgtR == 0) {
+  if (wantL == 0 && wantR == 0) {          // stop is immediate, never ramped
+    tgtL = tgtR = 0;
     setMotors(0, 0);
     outL = outR = 0;
     pidL.reset(); pidR.reset();
     resetSync();
     return;
+  }
+
+  // Setpoint ramp: targets move at most ACCEL_TPS2 * dt per step (0 = no ramp)
+  if (ACCEL_TPS2 > 0) {
+    float step = ACCEL_TPS2 * dt;
+    tgtL += constrain(wantL - tgtL, -step, step);
+    tgtR += constrain(wantR - tgtR, -step, step);
+  } else {
+    tgtL = wantL; tgtR = wantR;
   }
 
   expectedDiff += (tgtL - tgtR) * dt;
