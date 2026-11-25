@@ -46,12 +46,17 @@ Replace `COM5` with the port your board is on.
 
 ## Web control
 
-On boot the ESP32 creates its own WiFi network:
+On boot the ESP32 joins the WiFi network in `wifi_secrets.h`, for example your phone's hotspot. That file is
+git-ignored, so copy [`wifi_secrets.example.h`](wifi_secrets.example.h) to `wifi_secrets.h` and fill in your network.
+Once it's connected, open **http://rslk.local**, or the IP address printed on Serial or shown in the hotspot's list of
+connected devices (as `rslk`). Some Android phones don't resolve `.local` names, so use the IP address there.
+
+If there's no `wifi_secrets.h`, or the robot can't join within 15 s, it creates its own network instead:
 
 - SSID: `RSLK-ESP32`
 - Password: `rslk1234`
 
-You can change both in `config.h`. Join the network and open **http://192.168.4.1**. The page has:
+Join it and open **http://192.168.4.1**. The robot stops whenever the WiFi link drops. The page has:
 
 - Live status: mode, distance, target and actual speed of each wheel, sync error, PWM
 - GO / STOP / Calibrate / Gains / Save buttons
@@ -69,8 +74,8 @@ You can change both in `config.h`. Join the network and open **http://192.168.4.
    has been passed: the sonar distance plus `OBST_LEN_CM` plus `ROBOT_LEN_CM`.
 3. **Merge**: the robot eases back into its original lane, taking as long as it spent pulling out and passing. Then it goes back to cruising.
 
-Steering is proportional to the speed, so the robot follows the same path at any cruise speed. If something is closer than
-`STOP_CM` while cruising, or closer than `PASS_STOP_CM` while overtaking, the robot backs up and spins instead, as it did before.
+Steering is proportional to the speed, so the robot follows the same path at any cruise speed. The robot never backs up:
+every obstacle is overtaken, and one seen late just gets a quicker pull-out.
 The sideways offset is shown as *Lane offset* on the web page. The geometry constants and `PASS_SIDE` are in `config.h`.
 
 ## Console commands
@@ -84,12 +89,13 @@ The same commands work over serial and on the web page.
 | `cal` | Calibrate `MAX_TPS` and encoder directions (blocks for about 3 s) |
 | `kp` / `ki` / `kd X` | Wheel velocity PID gains |
 | `iz X` | Wheel integral zone in ticks/s: the integrator only runs while the error is below this (0 = always) |
-| `acc X` | Setpoint ramp in ticks/s² (0 = off). `stop` is never ramped |
+| `acc X` | Forward acceleration and deceleration limit in ticks/s², used for stopping too (0 = off, instant). Turning uses its own fixed ramp |
 | `sp` / `si` / `sd X` | Wheel-sync PID gains |
 | `sync 0/1` | Turn the wheel-sync PID off / on |
 | `cruise X` | Cruise speed in AUTO mode |
 | `tele 0/1/N` | Turn serial telemetry off / on, or on every `N` ms (N ≥ 10). Serial Plotter friendly |
 | `gains` | Print the current values |
+| `rec` | Print the flight recorder (last drive, up to 60 s at 20 Hz) as CSV. Also a download at `/rec` and the Log button on the web page |
 | `save` / `load` | Write the current values to flash / reload the saved ones |
 | `defaults` | Erase the saved values and reboot with the `config.h` defaults |
 

@@ -24,3 +24,9 @@ desktop.ini
 # PID tuner run logs
 tools/tune_runs/
 __pycache__/
+
+# WiFi credentials
+wifi_secrets.h
+
+# Flight recorder downloads
+logs/

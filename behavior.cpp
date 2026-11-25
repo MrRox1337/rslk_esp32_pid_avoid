@@ -8,7 +8,6 @@ AvoidState avoidState = CRUISE;
 float laneY = 0;
 
 static unsigned long stateT0 = 0;
-static int spinDir = 1;
 static float manSpeed = 0, manTurn = 0;
 static bool  deadmanOn = false;
 static unsigned long lastManual = 0;
@@ -51,7 +50,12 @@ static void steer(float speed, float yRef, float yRate) {
   float v = max(cmPerSec(speed), 1.0f);
   float psiRef = atan2f(yRate, v) + atan2f(yRef - laneY, LOOK_CM);
   psiRef = constrain(psiRef, -MAX_HEAD_RAD, MAX_HEAD_RAD);
-  drive(speed, speed * STEER_GAIN * (psiRef - odoPsi));
+  float turn = speed * STEER_GAIN * (psiRef - odoPsi);
+  float lim = TURN_FRAC * fabsf(speed);              // inner wheel keeps rolling forwards
+  turn = constrain(turn, -lim, lim);
+  float sum = fabsf(speed) + fabsf(turn);            // scale down together, never clip one,
+  if (sum > 255) { speed *= 255 / sum; turn *= 255 / sum; }   // so the curve is kept
+  drive(speed, turn);
 }
 
 static void setAvoidState(AvoidState s) {
@@ -86,7 +90,6 @@ static void avoidStep() {
   float sp = CRUISE_SPEED;
   switch (avoidState) {
     case CRUISE:
-      if (distCm < STOP_CM) { setAvoidState(BACKUP); break; }
       if (distCm < PASS_CM) {
         // Obstacle ahead: be in the passing lane PASS_MARGIN_CM before reaching it,
         // and stay there until the robot is past its far end.
@@ -98,8 +101,7 @@ static void avoidStep() {
       steer(sp, 0, 0);                         // hold the lane
       break;
 
-    case PASS_OUT: {
-      if (distCm < PASS_STOP_CM) { setAvoidState(BACKUP); break; }
+    case PASS_OUT: {                           // sonar ignored: it can't see the obstacle from here
       float yRef = PASS_SIDE * LANE_CM * ease(t / outSec);
       float rate = PASS_SIDE * LANE_CM * easeD(t / outSec) / outSec;
       steer(sp, yRef, rate);
@@ -111,23 +113,57 @@ static void avoidStep() {
     } break;
 
     case PASS_BACK: {
-      if (distCm < PASS_STOP_CM) { setAvoidState(BACKUP); break; }
       float u = t / backSec;
       steer(sp, backFromY * (1 - ease(u)), -backFromY * easeD(u) / backSec);
       if (u >= 1) setAvoidState(CRUISE);
     } break;
-
-    case BACKUP:
-      drive(-BACK_SPEED, 0);
-      if (t * 1000 > BACKUP_MS) { spinDir = -spinDir; setAvoidState(SPIN); }
-      break;
-
-    case SPIN:
-      drive(0, spinDir * SPIN_SPEED);
-      if (t * 1000 > SPIN_MIN_MS && distCm > CLEAR_CM) { odoReset(); setAvoidState(CRUISE); }
-      else if (t * 1000 > SPIN_MAX_MS) { spinDir = -spinDir; setAvoidState(SPIN); }
-      break;
   }
+}
+
+// ---------- flight recorder ----------
+struct Sample {
+  uint32_t ms;
+  uint8_t  mode, state;
+  int16_t  x, y, psi;                    // mm, mm, 0.1 deg
+  int16_t  tgtL, velL, tgtR, velR;       // ticks/s
+  int16_t  outL, outR, sync, dist;       // PWM, ticks, mm
+};
+static constexpr int REC_N = REC_SECONDS * 1000 / REC_MS;
+static Sample rec[REC_N];
+static int recHead = 0, recLen = 0;
+
+static void recordStep() {
+  static unsigned long last = 0;
+  static Mode lastMode = IDLE;
+  unsigned long now = millis();
+  if (mode != IDLE && lastMode == IDLE) recHead = recLen = 0;   // new drive, new log
+  lastMode = mode;
+  if (mode == IDLE || now - last < REC_MS) return;
+  last = now;
+  Sample &s = rec[recHead];
+  s = {now, (uint8_t)mode, (uint8_t)avoidState,
+       (int16_t)constrain(odoX * 10, -32000, 32000), (int16_t)constrain(laneY * 10, -32000, 32000),
+       (int16_t)constrain(degrees(odoPsi) * 10, -32000, 32000),
+       (int16_t)tgtL, (int16_t)velL, (int16_t)tgtR, (int16_t)velR,
+       (int16_t)outL, (int16_t)outR, (int16_t)constrain(syncErr, -32000, 32000), (int16_t)(distCm * 10)};
+  recHead = (recHead + 1) % REC_N;
+  if (recLen < REC_N) recLen++;
+}
+
+int recCount() { return recLen; }
+
+void recHeader(char *buf, size_t n) {
+  snprintf(buf, n, "t_s,mode,x_cm,y_cm,heading_deg,tgtL,velL,tgtR,velR,outL,outR,syncErr,dist_cm\n");
+}
+
+void recLine(int i, char *buf, size_t n) {
+  static const char *names[] = {"idle", "cruise", "overtake", "merge", "manual"};
+  const Sample &first = rec[(recHead - recLen + REC_N) % REC_N];
+  const Sample &s = rec[(recHead - recLen + i + REC_N) % REC_N];
+  int m = s.mode == AUTO ? 1 + s.state : s.mode == MANUAL ? 4 : 0;
+  snprintf(buf, n, "%.2f,%s,%.1f,%.1f,%.1f,%d,%d,%d,%d,%d,%d,%d,%.1f\n",
+           (s.ms - first.ms) / 1000.0, names[m], s.x / 10.0, s.y / 10.0, s.psi / 10.0,
+           s.tgtL, s.velL, s.tgtR, s.velR, s.outL, s.outR, s.sync, s.dist / 10.0);
 }
 
 void behaviorStep() {
@@ -142,10 +178,11 @@ void behaviorStep() {
   } else {
     drive(0, 0);
   }
+  recordStep();
 }
 
 const char *modeName() {
   static const char *names[] = {"IDLE", "AUTO", "MANUAL"};
-  static const char *avoid[] = {"AUTO/cruise", "AUTO/overtake", "AUTO/merge", "AUTO/backup", "AUTO/spin"};
+  static const char *avoid[] = {"AUTO/cruise", "AUTO/overtake", "AUTO/merge"};
   return mode == AUTO ? avoid[avoidState] : names[mode];
 }

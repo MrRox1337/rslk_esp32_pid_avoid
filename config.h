@@ -24,7 +24,8 @@ inline bool FLIP_ENC_R   = true;
 constexpr uint16_t LOOP_MS   = 10;     // 100 Hz control loop
 constexpr float    VEL_ALPHA = 0.3f;   // velocity low-pass filter
 inline float MAX_TPS = 2825.4f;        // ticks/s at PWM 255 (4x counting) -> "cal" measures it
-inline float ACCEL_TPS2 = 20000.0f;    // setpoint ramp, ticks/s per second (0 = off) -> "acc X"
+inline float ACCEL_TPS2 = 3000.0f;     // forward speed ramp, ticks/s per second (0 = off) -> "acc X"
+constexpr float TURN_ACCEL_TPS2 = 20000.0f;   // ramp on the turn part only (keeps spins from overshooting)
 
 // PID gains (kp, ki, kd, integral limit) -- see control.cpp
 #define WHEEL_PID_GAINS 0.15f, 1.0f, 0.002f, 120.0f   // ticks/s error -> PWM
@@ -48,22 +49,23 @@ constexpr float PASS_MARGIN_CM = 10;    // be fully in the passing lane this far
 constexpr float STEER_GAIN   = 1.0f;    // turn = speed * gain * heading error (rad)
 constexpr float LOOK_CM      = 20;      // lane-keeping look-ahead (bigger = gentler corrections)
 constexpr float MAX_HEAD_RAD = 0.7f;    // ~40 deg max heading away from the lane
-// Fallback when something is too close to pass: back up and spin.
-constexpr int   BACK_SPEED = 110;
-constexpr int   SPIN_SPEED = 110;
-constexpr float STOP_CM    = 20;        // cruising: closer than this -> back up instead
-constexpr float PASS_STOP_CM = 10;      // overtaking: closer than this -> abort, back up
-constexpr float CLEAR_CM   = 45;
-constexpr uint16_t BACKUP_MS   = 400;
-constexpr uint16_t SPIN_MIN_MS = 250;
-constexpr uint16_t SPIN_MAX_MS = 2500;
+constexpr float TURN_FRAC    = 0.6f;    // max turn / speed: inner wheel >= 25% of outer, never stops
+constexpr float STOP_CM      = 20;      // MANUAL mode only: won't drive forward into something this close
 constexpr uint16_t SONAR_MS    = 60;
 
 // ======================= WIFI / WEB =======================
+// Joins the network in wifi_secrets.h (git-ignored) if it exists, e.g. a phone hotspot.
+// If that fails (or there is no file) it runs its own access point AP_SSID instead.
+#if __has_include("wifi_secrets.h")
+#include "wifi_secrets.h"
+#endif
+constexpr char HOSTNAME[] = "rslk";                 // -> http://rslk.local
+constexpr uint16_t WIFI_CONNECT_MS = 15000;         // give up joining after this, start own AP
 constexpr char AP_SSID[] = "RSLK-ESP32";
 constexpr char AP_PASS[] = "rslk1234";              // min 8 chars (WPA2)
 constexpr uint16_t WEB_DRIVE_TIMEOUT_MS = 500;      // pad stops robot if no update this long
 constexpr uint16_t SPEED_SAVE_MS = 3000;            // save the speed slider once it has been still this long
+constexpr uint16_t REC_MS = 50, REC_SECONDS = 60;   // flight recorder: /rec on the web page (CSV)
 
 // ======================= CONSOLE =======================
 constexpr uint32_t SERIAL_BAUD  = 115200;

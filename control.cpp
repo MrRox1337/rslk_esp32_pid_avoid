@@ -14,6 +14,7 @@ int   outL = 0, outR = 0;
 static float cmdSpeed = 0, cmdTurn = 0;
 static long  posL = 0, posR = 0, lastPosL = 0, lastPosR = 0;
 static float expectedDiff = 0;
+static float rampS = 0, rampT = 0;     // ramped forward / turn parts of the targets, ticks/s
 
 void drive(float speed, float turn) {
   turn = constrain(turn, -255, 255);
@@ -48,10 +49,24 @@ static void controlStep(float dt) {
   velL += VEL_ALPHA * (rawL - velL);
   velR += VEL_ALPHA * (rawR - velR);
 
-  float wantL = (cmdSpeed + cmdTurn) / 255.0 * MAX_TPS;
-  float wantR = (cmdSpeed - cmdTurn) / 255.0 * MAX_TPS;
+  float wantS = cmdSpeed / 255.0 * MAX_TPS;
+  float wantT = cmdTurn  / 255.0 * MAX_TPS;
 
-  if (wantL == 0 && wantR == 0) {          // stop is immediate, never ramped
+  // Setpoint ramps: forward speed at ACCEL_TPS2 (gentle, 0 = off), turn at TURN_ACCEL_TPS2.
+  // Stopping uses the same ramp, so the robot slows down instead of braking hard.
+  // While the speed ramps, the turn is scaled with it so the curve stays the same and the
+  // slow wheel never runs backwards (pure spins, wantS == 0, are not scaled).
+  float stepS = ACCEL_TPS2 * dt, stepT = TURN_ACCEL_TPS2 * dt;
+  float prevS = rampS;
+  rampS = ACCEL_TPS2 > 0 ? rampS + constrain(wantS - rampS, -stepS, stepS) : wantS;
+  if (wantS == 0 && wantT == 0 && prevS != 0) {
+    rampT *= rampS / prevS;                // stopping from a curve: shrink the turn with the speed,
+  } else {                                 // both wheels reach 0 together along the same curve
+    float turnGoal = wantS != 0 ? wantT * constrain(rampS / wantS, 0.0f, 1.0f) : wantT;
+    rampT += constrain(turnGoal - rampT, -stepT, stepT);
+  }
+
+  if (rampS == 0 && rampT == 0) {          // fully stopped: motors off, controllers reset
     tgtL = tgtR = 0;
     setMotors(0, 0);
     outL = outR = 0;
@@ -60,14 +75,8 @@ static void controlStep(float dt) {
     return;
   }
 
-  // Setpoint ramp: targets move at most ACCEL_TPS2 * dt per step (0 = no ramp)
-  if (ACCEL_TPS2 > 0) {
-    float step = ACCEL_TPS2 * dt;
-    tgtL += constrain(wantL - tgtL, -step, step);
-    tgtR += constrain(wantR - tgtR, -step, step);
-  } else {
-    tgtL = wantL; tgtR = wantR;
-  }
+  tgtL = rampS + rampT;
+  tgtR = rampS - rampT;
 
   expectedDiff += (tgtL - tgtR) * dt;
   syncErr = (posL - posR) - expectedDiff;   // + = left wheel has gone too far

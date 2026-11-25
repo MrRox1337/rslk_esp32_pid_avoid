@@ -1,6 +1,7 @@
 #include "web.h"
 #include <WiFi.h>
 #include <WebServer.h>
+#include <ESPmDNS.h>
 #include "config.h"
 #include "console.h"
 #include "control.h"
@@ -40,6 +41,23 @@ static void handleSpeed() {
   server.send(200, "text/plain", "ok");
 }
 
+static void handleRec() {           // flight recorder as a CSV download, streamed in chunks
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.sendHeader("Content-Disposition", "attachment; filename=rslk_run.csv");
+  server.send(200, "text/csv", "");
+  String chunk;
+  char line[120];
+  recHeader(line, sizeof(line));
+  chunk = line;
+  for (int i = 0, n = recCount(); i < n; i++) {
+    recLine(i, line, sizeof(line));
+    chunk += line;
+    if (chunk.length() > 2000) { server.sendContent(chunk); chunk = ""; }
+  }
+  server.sendContent(chunk);
+  server.sendContent("");             // end of chunked reply
+}
+
 static void handleStatus() {
   char j[256];
   snprintf(j, sizeof(j),
@@ -49,23 +67,53 @@ static void handleStatus() {
   server.send(200, "application/json", j);
 }
 
-void webBegin() {
+static void startOwnAP() {
   WiFi.mode(WIFI_AP);
   WiFi.softAP(AP_SSID, AP_PASS);
+  Serial.printf("WiFi: own network \"%s\" (pass \"%s\") -> open http://%s\n",
+                AP_SSID, AP_PASS, WiFi.softAPIP().toString().c_str());
+}
+
+void webBegin() {
+  WiFi.setHostname(HOSTNAME);
+#ifdef WIFI_SSID
+  WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  Serial.printf("WiFi: joining \"%s\"", WIFI_SSID);
+  unsigned long t0 = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - t0 < WIFI_CONNECT_MS) { delay(250); Serial.print('.'); }
+  Serial.println();
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.printf("WiFi: connected -> open http://%s or http://%s.local\n",
+                  WiFi.localIP().toString().c_str(), HOSTNAME);
+  } else {
+    Serial.println("WiFi: could not join, starting own network instead");
+    WiFi.disconnect(true);
+    startOwnAP();
+  }
+#else
+  startOwnAP();
+#endif
   WiFi.setSleep(false);                       // lower latency for driving
+  MDNS.begin(HOSTNAME);
+  MDNS.addService("http", "tcp", 80);
+
+  // Stop to be safe when the link to the phone breaks:
+  // a device leaves our own network, or we drop off the phone's hotspot
   WiFi.onEvent([](WiFiEvent_t, WiFiEventInfo_t) { clientDropped = true; },
                ARDUINO_EVENT_WIFI_AP_STADISCONNECTED);
+  WiFi.onEvent([](WiFiEvent_t, WiFiEventInfo_t) { clientDropped = true; },
+               ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 
   server.on("/", handleRoot);
   server.on("/cmd", handleCmd);
   server.on("/drive", handleDrive);
   server.on("/status", handleStatus);
   server.on("/speed", handleSpeed);
+  server.on("/rec", handleRec);
   server.onNotFound([]() { server.sendHeader("Location", "/"); server.send(302); });
   server.begin();
-
-  Serial.printf("WiFi AP \"%s\" (pass \"%s\") -> open http://%s\n",
-                AP_SSID, AP_PASS, WiFi.softAPIP().toString().c_str());
 }
 
 void webStep() {
@@ -74,9 +122,9 @@ void webStep() {
     speedChangedAt = 0;
     settingsSaveCruise();
   }
-  if (clientDropped) {          // someone left the AP: stop, to be safe
+  if (clientDropped) {          // WiFi link lost: stop, to be safe
     clientDropped = false;
+    if (mode != IDLE) Serial.println("WiFi link lost -> STOP");   // (reconnect retries repeat this event)
     stopRobot();
-    Serial.println("WiFi client disconnected -> STOP");
   }
 }

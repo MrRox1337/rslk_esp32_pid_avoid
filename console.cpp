@@ -22,7 +22,7 @@ size_t TeePrint::write(const uint8_t *b, size_t n) {
 }
 
 void printHelp() {
-  con.println("go | stop | m S T (manual speed,turn) | cal | sync 0/1 | tele 0/1/ms");
+  con.println("go | stop | m S T (manual speed,turn) | cal | sync 0/1 | tele 0/1/ms | rec (log CSV)");
   con.println("kp/ki/kd/iz X (wheel PID) | sp/si/sd X (sync PID) | cruise X | acc X (ramp) | gains");
   con.println("save (to flash) | load (from flash) | defaults (erase saved + reboot)");
 }
@@ -34,6 +34,13 @@ static void printGains() {
   con.printf("MAX_TPS = %.1f  flipEnc L/R = %d/%d  cruise = %d  accel = %.0f\n",
              MAX_TPS, FLIP_ENC_L, FLIP_ENC_R, CRUISE_SPEED, ACCEL_TPS2);
   if (settingsDirty) con.println("(unsaved changes - type 'save' to keep them)");
+}
+
+static void dumpRec() {             // flight recorder to Serial only (too big for the web reply)
+  char line[120];
+  recHeader(line, sizeof(line)); Serial.print(line);
+  for (int i = 0, n = recCount(); i < n; i++) { recLine(i, line, sizeof(line)); Serial.print(line); }
+  con.printf("%d samples (also at /rec on the web page)\n", recCount());
 }
 
 void runCmd(char *s) {
@@ -64,6 +71,7 @@ void runCmd(char *s) {
   else if (!strcmp(cmd, "m"))        { setManual(x, y); }
   else if (!strcmp(cmd, "tele"))     { telemetry = x != 0; if (x >= 10) teleMs = (uint16_t)x; else if (x) teleMs = TELEMETRY_MS; }
   else if (!strcmp(cmd, "gains"))    { printGains(); }
+  else if (!strcmp(cmd, "rec"))      { dumpRec(); }
   else if (!strcmp(cmd, "save"))     { settingsSave(con); }
   else if (!strcmp(cmd, "load"))     { settingsLoad(con); pidL.reset(); pidR.reset(); resetSync(); printGains(); }
   else if (!strcmp(cmd, "defaults")) { stopRobot(); settingsClear(con); restartAt = millis() + 500; }

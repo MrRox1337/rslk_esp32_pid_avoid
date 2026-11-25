@@ -17,7 +17,8 @@
     web.*         WiFi AP + web server; web_page.h is the HTML
 
   Serial: 115200, "Newline" line ending. Type "help".
-  Web:    join WiFi AP_SSID / AP_PASS, open http://192.168.4.1
+  Web:    joins WIFI_SSID from wifi_secrets.h; open http://rslk.local or the IP printed here.
+          No network: join AP_SSID / AP_PASS, open http://192.168.4.1
 */
 
 #include "config.h"

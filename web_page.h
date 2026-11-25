@@ -32,7 +32,8 @@ border-radius:8px;padding:8px;white-space:pre-wrap}#link{font-size:12px;color:va
 <div>Lane offset<b id="lane">–</b></div>
 </div>
 <div class="card row"><button class="go" data-c="go">GO (auto)</button><button class="stop" data-c="stop">STOP</button>
-<button data-c="cal">Calibrate</button><button data-c="gains">Gains</button><button data-c="save">Save</button></div>
+<button data-c="cal">Calibrate</button><button data-c="gains">Gains</button><button data-c="save">Save</button>
+<a href="/rec" download="rslk_run.csv" style="flex:1;min-width:64px"><button style="width:100%">Log</button></a></div>
 <div class="card"><div class="pad" id="pad">
 <button data-s="1" data-t="-.5">↖</button><button data-s="1" data-t="0">↑</button><button data-s="1" data-t=".5">↗</button>
 <button data-s="0" data-t="-1">⟲</button><button class="stop" data-c="stop">■</button><button data-s="0" data-t="1">⟳</button>
