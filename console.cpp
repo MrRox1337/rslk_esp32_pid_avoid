@@ -7,6 +7,7 @@
 
 TeePrint con;
 bool telemetry = true;
+static uint16_t teleMs = TELEMETRY_MS;   // "tele N" (N >= 10) sets the period
 static unsigned long restartAt = 0;   // deferred reboot so the web reply gets sent first
 
 size_t TeePrint::write(uint8_t c) {
@@ -21,7 +22,7 @@ size_t TeePrint::write(const uint8_t *b, size_t n) {
 }
 
 void printHelp() {
-  con.println("go | stop | m S T (manual speed,turn) | cal | sync 0/1 | tele 0/1");
+  con.println("go | stop | m S T (manual speed,turn) | cal | sync 0/1 | tele 0/1/ms");
   con.println("kp/ki/kd X (wheel PID) | sp/si/sd X (sync PID) | cruise X | gains");
   con.println("save (to flash) | load (from flash) | defaults (erase saved + reboot)");
 }
@@ -59,7 +60,7 @@ void runCmd(char *s) {
   if      (!strcmp(cmd, "go"))       { startAuto(); }
   else if (!strcmp(cmd, "stop"))     { stopRobot(); }
   else if (!strcmp(cmd, "m"))        { setManual(x, y); }
-  else if (!strcmp(cmd, "tele"))     { telemetry = x != 0; }
+  else if (!strcmp(cmd, "tele"))     { telemetry = x != 0; if (x >= 10) teleMs = (uint16_t)x; else if (x) teleMs = TELEMETRY_MS; }
   else if (!strcmp(cmd, "gains"))    { printGains(); }
   else if (!strcmp(cmd, "save"))     { settingsSave(con); }
   else if (!strcmp(cmd, "load"))     { settingsLoad(con); pidL.reset(); pidR.reset(); resetSync(); printGains(); }
@@ -83,10 +84,10 @@ static void readSerial() {
 static void printTelemetry() {
   static unsigned long last = 0;
   unsigned long now = millis();
-  if (!telemetry || now - last < TELEMETRY_MS) return;
+  if (!telemetry || now - last < teleMs) return;
   last = now;
-  Serial.printf("tgtL:%.0f,velL:%.0f,tgtR:%.0f,velR:%.0f,syncErr:%.0f,dist:%.1f\n",
-                tgtL, velL, tgtR, velR, syncErr, distCm);
+  Serial.printf("t:%lu,tgtL:%.0f,velL:%.0f,tgtR:%.0f,velR:%.0f,outL:%d,outR:%d,syncErr:%.0f,dist:%.1f\n",
+                now, tgtL, velL, tgtR, velR, outL, outR, syncErr, distCm);
 }
 
 void consoleStep() {

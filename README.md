@@ -72,7 +72,7 @@ The same commands work over serial and on the web page.
 | `sp` / `si` / `sd X` | Wheel-sync PID gains |
 | `sync 0/1` | Turn the wheel-sync PID off / on |
 | `cruise X` | Cruise speed in AUTO mode |
-| `tele 0/1` | Turn serial telemetry off / on (Serial Plotter friendly) |
+| `tele 0/1/N` | Turn serial telemetry off / on, or on every `N` ms (N ≥ 10). Serial Plotter friendly |
 | `gains` | Print the current values |
 | `save` / `load` | Write the current values to flash / reload the saved ones |
 | `defaults` | Erase the saved values and reboot with the `config.h` defaults |
