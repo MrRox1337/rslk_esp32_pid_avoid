@@ -11,6 +11,7 @@
     encoders.*    PCNT hardware quadrature counting
     control.*     wheel velocity PID + wheel-sync PID, drive(), calibrate()
     sonar.*       HC-SR04 with median filter
+    imu.*         BNO055 heading (gyro), falls back to encoders if absent
     behavior.*    IDLE / AUTO (obstacle avoidance) / MANUAL modes
     console.*     text commands (Serial + web), telemetry
     settings.*    save/load tuned values to flash (Preferences / NVS)
@@ -30,6 +31,7 @@
 #include "console.h"
 #include "settings.h"
 #include "web.h"
+#include "imu.h"
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
@@ -38,6 +40,7 @@ void setup() {
   motorsBegin();
   encodersBegin();
   sonarBegin();
+  imuBegin(Serial);       // robot should be still while the gyro settles
   webBegin();
 
   Serial.println("RSLK + ESP32 ready. Type 'cal' first, then 'go'.");
@@ -48,6 +51,7 @@ void loop() {
   consoleStep();     // serial commands + telemetry
   webStep();         // web requests
   sonarUpdate();     // distance (every SONAR_MS)
+  imuUpdate();       // heading (every IMU_MS)
   behaviorStep();    // decides speed/turn
   controlUpdate();   // PID -> motors (every LOOP_MS)
 }

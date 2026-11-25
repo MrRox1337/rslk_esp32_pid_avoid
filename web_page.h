@@ -29,7 +29,7 @@ border-radius:8px;padding:8px;white-space:pre-wrap}#link{font-size:12px;color:va
 <div class="card stat">
 <div>Mode<b id="mode">–</b></div><div>Distance<b id="dist">–</b></div><div>Sync err<b id="sync">–</b></div>
 <div>L tgt / vel<b id="l">–</b></div><div>R tgt / vel<b id="r">–</b></div><div>PWM L / R<b id="pwm">–</b></div>
-<div>Lane offset<b id="lane">–</b></div>
+<div>Lane offset<b id="lane">–</b></div><div>IMU heading<b id="hdg">–</b></div>
 </div>
 <div class="card row"><button class="go" data-c="go">GO (auto)</button><button class="stop" data-c="stop">STOP</button>
 <button data-c="cal">Calibrate</button><button data-c="gains">Gains</button><button data-c="save">Save</button>
@@ -60,6 +60,6 @@ document.addEventListener('visibilitychange',stopPad);
 let busy=false;setInterval(async()=>{if(busy)return;busy=true;try{const s=await (await fetch('/status')).json();
 $('mode').textContent=s.mode;$('dist').textContent=s.dist.toFixed(0)+' cm';$('sync').textContent=s.sync.toFixed(0);
 $('l').textContent=s.tgtL.toFixed(0)+' / '+s.velL.toFixed(0);$('r').textContent=s.tgtR.toFixed(0)+' / '+s.velR.toFixed(0);
-$('pwm').textContent=s.outL+' / '+s.outR;$('lane').textContent=s.lane.toFixed(0)+' cm';
+$('pwm').textContent=s.outL+' / '+s.outR;$('lane').textContent=s.lane.toFixed(0)+' cm';$('hdg').textContent=s.imu?s.hdg.toFixed(1)+'°':'off';
 if(!spdSynced){spdSynced=true;spd.value=s.cruise;$('spdv').textContent=spd.value}$('link').textContent='connected'}catch(e){$('link').textContent='no link'}busy=false},300);
 </script></body></html>)HTML";

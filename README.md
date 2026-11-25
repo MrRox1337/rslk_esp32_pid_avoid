@@ -18,9 +18,12 @@ Firmware for a **TI-RSLK MAX** chassis (Pololu motor driver and power distributi
 | Left encoder A / B | 18 / 19 |
 | Right encoder A / B | 23 / 4 |
 | HC-SR04 TRIG / ECHO | 14 / 34 |
+| BNO055 SDA / SCL (I2C, 0x28 or 0x29) | 21 / 22 |
 
 GPIO 34 is input-only and **not 5 V tolerant**. Feed the HC-SR04's ECHO pin through a 1k/2k voltage
-divider, or use the 3.3 V HC-SR04P instead. All pins are defined in [`config.h`](config.h).
+divider, or use the 3.3 V HC-SR04P instead.
+
+The BNO055 is optional and powered from 3.3 V. On bare GY-BNO055 boards, tie **PS0 and PS1 to GND** to select I2C mode. With the BNO055 present, heading comes from its gyro, which wheel slip can't fool. Without it, heading comes from the encoders. All pins are defined in [`config.h`](config.h).
 
 ## Building
 
@@ -71,7 +74,7 @@ Join it and open **http://192.168.4.1**. The robot stops whenever the WiFi link 
 1. **Cruise**: drive straight at the slider speed.
 2. **Overtake**: when the sonar sees something closer than `PASS_CM` (60 cm), the robot pulls out smoothly to a passing lane `LANE_CM`
    (30 cm) to the side and keeps going. The sonar can't see the obstacle once the robot is beside it, so odometry decides when it
-   has been passed: the sonar distance plus `OBST_LEN_CM` plus `ROBOT_LEN_CM`.
+   has been passed: the sonar distance plus `OBST_LEN_CM` plus `ROBOT_LEN_CM`. Heading comes from the BNO055 when it's fitted.
 3. **Merge**: the robot eases back into its original lane, taking as long as it spent pulling out and passing. Then it goes back to cruising.
 
 Steering is proportional to the speed, so the robot follows the same path at any cruise speed. The robot never backs up:
@@ -95,6 +98,7 @@ The same commands work over serial and on the web page.
 | `cruise X` | Cruise speed in AUTO mode |
 | `tele 0/1/N` | Turn serial telemetry off / on, or on every `N` ms (N ≥ 10). Serial Plotter friendly |
 | `gains` | Print the current values |
+| `imu` | Print the BNO055 heading and calibration. Turning right should increase it; if not, set `IMU_SIGN = -1` |
 | `rec` | Print the flight recorder (last drive, up to 60 s at 20 Hz) as CSV. Also a download at `/rec` and the Log button on the web page |
 | `save` / `load` | Write the current values to flash / reload the saved ones |
 | `defaults` | Erase the saved values and reboot with the `config.h` defaults |
@@ -127,6 +131,7 @@ saved as CSV, JSON and SVG in `tools/tune_runs/`. Opening the port resets the ES
 | `encoders.*` | PCNT quadrature counting |
 | `control.*` | Wheel and sync PIDs, `drive()`, `calibrate()` |
 | `sonar.*` | HC-SR04 with median-of-3 filter |
+| `imu.*` | BNO055 heading (IMUPLUS mode, 100 Hz), falls back to encoders |
 | `behavior.*` | IDLE / AUTO / MANUAL modes, avoidance state machine |
 | `console.*` | Command interpreter (serial and web), telemetry |
 | `settings.*` | Saving and loading settings in flash |

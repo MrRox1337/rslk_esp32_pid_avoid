@@ -4,6 +4,7 @@
 #include "behavior.h"
 #include "sonar.h"
 #include "settings.h"
+#include "imu.h"
 
 TeePrint con;
 bool telemetry = true;
@@ -22,7 +23,7 @@ size_t TeePrint::write(const uint8_t *b, size_t n) {
 }
 
 void printHelp() {
-  con.println("go | stop | m S T (manual speed,turn) | cal | sync 0/1 | tele 0/1/ms | rec (log CSV)");
+  con.println("go | stop | m S T (manual speed,turn) | cal | sync 0/1 | tele 0/1/ms | rec (log CSV) | imu");
   con.println("kp/ki/kd/iz X (wheel PID) | sp/si/sd X (sync PID) | cruise X | acc X (ramp) | gains");
   con.println("save (to flash) | load (from flash) | defaults (erase saved + reboot)");
 }
@@ -72,6 +73,7 @@ void runCmd(char *s) {
   else if (!strcmp(cmd, "tele"))     { telemetry = x != 0; if (x >= 10) teleMs = (uint16_t)x; else if (x) teleMs = TELEMETRY_MS; }
   else if (!strcmp(cmd, "gains"))    { printGains(); }
   else if (!strcmp(cmd, "rec"))      { dumpRec(); }
+  else if (!strcmp(cmd, "imu"))      { imuStatus(con); }
   else if (!strcmp(cmd, "save"))     { settingsSave(con); }
   else if (!strcmp(cmd, "load"))     { settingsLoad(con); pidL.reset(); pidR.reset(); resetSync(); printGains(); }
   else if (!strcmp(cmd, "defaults")) { stopRobot(); settingsClear(con); restartAt = millis() + 500; }

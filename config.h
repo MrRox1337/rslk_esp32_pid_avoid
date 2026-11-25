@@ -9,7 +9,7 @@ constexpr int PWMR = 32, DIRR = 33, SLPR = 13;    // right DRV8838
 constexpr int ELA  = 18, ELB  = 19;               // left encoder
 constexpr int ERA  = 23, ERB  = 4;                // right encoder
 constexpr int TRIG = 14, ECHO = 34;               // HC-SR04 (34 is input-only; use divider!)
-// spare: I2C SDA 21 / SCL 22
+constexpr int IMU_SDA = 21, IMU_SCL = 22;         // BNO055 (I2C address 0x28 or 0x29)
 
 constexpr uint32_t PWM_FREQ = 20000;   // 20 kHz: above hearing, fine for DRV8838
 constexpr uint8_t  PWM_BITS = 8;       // duty 0..255
@@ -36,6 +36,10 @@ constexpr float TURN_ACCEL_TPS2 = 20000.0f;   // ramp on the turn part only (kee
 // RSLK MAX / Romi: 70 mm wheels, 1440 ticks per wheel turn (4x counting), 141 mm track.
 constexpr float TICKS_PER_CM = 65.5f;
 constexpr float TRACK_CM     = 14.1f;   // wheel centre to wheel centre
+// Heading comes from the BNO055 when it's present (encoders measure distance only).
+constexpr int      IMU_SIGN = +1;       // flip to -1 if "imu" heading decreases when turning right
+constexpr uint16_t IMU_MS   = 10;       // read rate (BNO055 fusion runs at 100 Hz)
+constexpr float    HOLD_GAIN = 1.0f;    // manual straight driving: turn = |speed| * gain * heading drift (rad)
 
 // ======================= OBSTACLE AVOIDANCE =======================
 inline int CRUISE_SPEED = 150;          // web speed slider; saved to flash on change

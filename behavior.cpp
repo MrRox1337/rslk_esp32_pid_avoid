@@ -2,6 +2,7 @@
 #include "config.h"
 #include "control.h"
 #include "sonar.h"
+#include "imu.h"
 
 Mode mode = IDLE;
 AvoidState avoidState = CRUISE;
@@ -14,12 +15,15 @@ static unsigned long lastManual = 0;
 
 // ---------- lane odometry ----------
 // x = distance along the lane, laneY = sideways offset, psi = heading. cm / rad, + = right.
-static float odoX = 0, odoPsi = 0;
+// Distance comes from the encoders; heading from the BNO055 gyro if present (wheel slip and
+// gearbox play fool the encoders, not the gyro). encPsi is the encoder-only heading, for the log.
+static float odoX = 0, odoPsi = 0, encPsi = 0, lastImu = 0;
 static long  odoL = 0, odoR = 0;
 
 static void odoReset() {
-  odoX = laneY = odoPsi = 0;
+  odoX = laneY = odoPsi = encPsi = 0;
   getPositions(odoL, odoR);
+  lastImu = imuHeading();
 }
 
 static void odoUpdate() {
@@ -27,7 +31,11 @@ static void odoUpdate() {
   getPositions(l, r);
   float dL = (l - odoL) / TICKS_PER_CM, dR = (r - odoR) / TICKS_PER_CM;
   odoL = l; odoR = r;
-  float ds = (dL + dR) / 2, dPsi = (dL - dR) / TRACK_CM;
+  float ds = (dL + dR) / 2, dEnc = (dL - dR) / TRACK_CM;
+  encPsi += dEnc;
+  float imu = imuHeading();
+  float dPsi = imuOk ? imu - lastImu : dEnc;
+  lastImu = imu;
   float mid = odoPsi + dPsi / 2;
   odoX  += ds * cosf(mid);
   laneY += ds * sinf(mid);
@@ -124,7 +132,7 @@ static void avoidStep() {
 struct Sample {
   uint32_t ms;
   uint8_t  mode, state;
-  int16_t  x, y, psi;                    // mm, mm, 0.1 deg
+  int16_t  x, y, psi, encPsi;            // mm, mm, 0.1 deg (heading used, encoder-only heading)
   int16_t  tgtL, velL, tgtR, velR;       // ticks/s
   int16_t  outL, outR, sync, dist;       // PWM, ticks, mm
 };
@@ -144,6 +152,7 @@ static void recordStep() {
   s = {now, (uint8_t)mode, (uint8_t)avoidState,
        (int16_t)constrain(odoX * 10, -32000, 32000), (int16_t)constrain(laneY * 10, -32000, 32000),
        (int16_t)constrain(degrees(odoPsi) * 10, -32000, 32000),
+       (int16_t)constrain(degrees(encPsi) * 10, -32000, 32000),
        (int16_t)tgtL, (int16_t)velL, (int16_t)tgtR, (int16_t)velR,
        (int16_t)outL, (int16_t)outR, (int16_t)constrain(syncErr, -32000, 32000), (int16_t)(distCm * 10)};
   recHead = (recHead + 1) % REC_N;
@@ -153,7 +162,7 @@ static void recordStep() {
 int recCount() { return recLen; }
 
 void recHeader(char *buf, size_t n) {
-  snprintf(buf, n, "t_s,mode,x_cm,y_cm,heading_deg,tgtL,velL,tgtR,velR,outL,outR,syncErr,dist_cm\n");
+  snprintf(buf, n, "t_s,mode,x_cm,y_cm,heading_deg,enc_heading_deg,tgtL,velL,tgtR,velR,outL,outR,syncErr,dist_cm\n");
 }
 
 void recLine(int i, char *buf, size_t n) {
@@ -161,8 +170,8 @@ void recLine(int i, char *buf, size_t n) {
   const Sample &first = rec[(recHead - recLen + REC_N) % REC_N];
   const Sample &s = rec[(recHead - recLen + i + REC_N) % REC_N];
   int m = s.mode == AUTO ? 1 + s.state : s.mode == MANUAL ? 4 : 0;
-  snprintf(buf, n, "%.2f,%s,%.1f,%.1f,%.1f,%d,%d,%d,%d,%d,%d,%d,%.1f\n",
-           (s.ms - first.ms) / 1000.0, names[m], s.x / 10.0, s.y / 10.0, s.psi / 10.0,
+  snprintf(buf, n, "%.2f,%s,%.1f,%.1f,%.1f,%.1f,%d,%d,%d,%d,%d,%d,%d,%.1f\n",
+           (s.ms - first.ms) / 1000.0, names[m], s.x / 10.0, s.y / 10.0, s.psi / 10.0, s.encPsi / 10.0,
            s.tgtL, s.velL, s.tgtR, s.velR, s.outL, s.outR, s.sync, s.dist / 10.0);
 }
 
@@ -173,8 +182,17 @@ void behaviorStep() {
   if (mode == AUTO) {
     avoidStep();
   } else if (mode == MANUAL) {
+    // Straight commands hold the heading they started with (gyro), so forward and reverse
+    // stay straight even when a wheel slips. Works the same in reverse: turn > 0 always turns right.
+    static bool holding = false;
+    static float holdPsi = 0;
+    bool straight = imuOk && manTurn == 0 && manSpeed != 0;
+    if (straight && !holding) holdPsi = odoPsi;
+    holding = straight;
+    float turn = straight ? fabsf(manSpeed) * HOLD_GAIN * (holdPsi - odoPsi) : manTurn;
+
     if (distCm < STOP_CM && manSpeed > 0) drive(0, manTurn);   // don't drive into things
-    else                                  drive(manSpeed, manTurn);
+    else                                  drive(manSpeed, turn);
   } else {
     drive(0, 0);
   }

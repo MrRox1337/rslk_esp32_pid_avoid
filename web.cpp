@@ -8,6 +8,7 @@
 #include "behavior.h"
 #include "sonar.h"
 #include "settings.h"
+#include "imu.h"
 #include "web_page.h"
 
 static WebServer server(80);
@@ -62,8 +63,9 @@ static void handleStatus() {
   char j[256];
   snprintf(j, sizeof(j),
            "{\"mode\":\"%s\",\"dist\":%.1f,\"tgtL\":%.0f,\"velL\":%.0f,\"tgtR\":%.0f,\"velR\":%.0f,"
-           "\"sync\":%.0f,\"outL\":%d,\"outR\":%d,\"cruise\":%d,\"lane\":%.1f}",
-           modeName(), distCm, tgtL, velL, tgtR, velR, syncErr, outL, outR, CRUISE_SPEED, laneY);
+           "\"sync\":%.0f,\"outL\":%d,\"outR\":%d,\"cruise\":%d,\"lane\":%.1f,\"hdg\":%.1f,\"imu\":%d}",
+           modeName(), distCm, tgtL, velL, tgtR, velR, syncErr, outL, outR, CRUISE_SPEED, laneY,
+           degrees(imuHeading()), imuOk);
   server.send(200, "application/json", j);
 }
 
