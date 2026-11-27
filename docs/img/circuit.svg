@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 640" width="920" height="640" role="img" aria-label="Wiring diagram of the ESP32, RSLK motor driver board, encoders, HC-SR04 and BNO055">
+<style>
+.bg{fill:#fcfcfb}.t{fill:#0b0b0b}.s{fill:#52514e}.m{fill:#898781}
+.box{fill:#f3f2ee;stroke:#898781}.mcu{fill:#e8f0fb;stroke:#2a78d6}
+.sig{stroke:#52514e}.v5{stroke:#eb6834}.v3{stroke:#2a78d6}.gnd{stroke:#898781}
+.f5{fill:#eb6834}.f3{fill:#2a78d6}.fg{fill:#898781}.res{fill:#fcfcfb;stroke:#52514e}
+@media (prefers-color-scheme:dark){
+.bg{fill:#1a1a19}.t{fill:#f0efec}.s{fill:#c3c2b7}.box{fill:#262624;stroke:#6b6a65}.mcu{fill:#1d2a3b;stroke:#3987e5}
+.sig{stroke:#c3c2b7}.v5{stroke:#d95926}.v3{stroke:#3987e5}.f5{fill:#d95926}.f3{fill:#3987e5}.res{fill:#1a1a19;stroke:#c3c2b7}}
+text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+</style>
+<rect class="bg" width="920" height="640" rx="8"/>
+<text class="t" x="24" y="30" font-size="15" font-weight="600">Wiring diagram</text>
+<text class="s" x="24" y="49" font-size="12">Signal pins as defined in config.h. Power: 6×AA → RSLK board → 5 V regulator → ESP32; the ESP32 3.3 V rail feeds the encoders and the BNO055</text>
+<rect class="mcu" x="440" y="90" width="160" height="500" rx="6" stroke-width="1.2"/>
+<text class="t" x="520.0" y="70" font-size="12" font-weight="600" text-anchor="middle">Freenove ESP32-WROVER-E</text>
+<text class="m" x="520.0" y="83" font-size="10.5" text-anchor="middle">camera unplugged</text>
+<rect class="box" x="215" y="100" width="130" height="230" rx="6" stroke-width="1.2"/>
+<text class="t" x="280.0" y="80" font-size="12" font-weight="600" text-anchor="middle">RSLK MAX motor driver</text>
+<text class="m" x="280.0" y="93" font-size="10.5" text-anchor="middle">and power distribution board</text>
+<rect class="box" x="30" y="108" width="105" height="52" rx="6" stroke-width="1.2"/>
+<text class="t" x="82.5" y="100" font-size="12" font-weight="600" text-anchor="middle">Battery</text>
+<text class="s" x="82" y="132" font-size="11" text-anchor="middle">6 × AA</text>
+<text class="m" x="82" y="149" font-size="10" text-anchor="middle">power switch</text>
+<polyline class="v5" fill="none" stroke-width="1.6" points="135,122 215,122"/>
+<text class="s" x="221" y="126" font-size="11" text-anchor="start">VBAT</text>
+<polyline class="gnd" fill="none" stroke-width="1.6" points="135,146 215,146"/>
+<text class="s" x="221" y="150" font-size="11" text-anchor="start">GND</text>
+<rect class="box" x="30" y="205" width="105" height="35" rx="6" stroke-width="1.2"/>
+<text class="t" x="82.5" y="197" font-size="12" font-weight="600" text-anchor="middle"></text>
+<text class="s" x="82" y="226" font-size="11" text-anchor="middle">Left motor</text>
+<rect class="box" x="30" y="262" width="105" height="35" rx="6" stroke-width="1.2"/>
+<text class="t" x="82.5" y="254" font-size="12" font-weight="600" text-anchor="middle"></text>
+<text class="s" x="82" y="283" font-size="11" text-anchor="middle">Right motor</text>
+<polyline class="sig" fill="none" stroke-width="2.4" points="135,222 215,222"/>
+<text class="s" x="221" y="226" font-size="11" text-anchor="start">M L</text>
+<polyline class="sig" fill="none" stroke-width="2.4" points="135,279 215,279"/>
+<text class="s" x="221" y="283" font-size="11" text-anchor="start">M R</text>
+<text class="m" x="280" y="319" font-size="10" text-anchor="middle">2 × DRV8838</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="345,122 440,122"/>
+<text class="s" x="339" y="126" font-size="11" text-anchor="end">PWML</text>
+<text class="s" x="448" y="126" font-size="11" text-anchor="start">GPIO25</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="345,148 440,148"/>
+<text class="s" x="339" y="152" font-size="11" text-anchor="end">DIRL</text>
+<text class="s" x="448" y="152" font-size="11" text-anchor="start">GPIO26</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="345,174 440,174"/>
+<text class="s" x="339" y="178" font-size="11" text-anchor="end">nSLPL</text>
+<text class="s" x="448" y="178" font-size="11" text-anchor="start">GPIO27</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="345,200 440,200"/>
+<text class="s" x="339" y="204" font-size="11" text-anchor="end">PWMR</text>
+<text class="s" x="448" y="204" font-size="11" text-anchor="start">GPIO32</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="345,226 440,226"/>
+<text class="s" x="339" y="230" font-size="11" text-anchor="end">DIRR</text>
+<text class="s" x="448" y="230" font-size="11" text-anchor="start">GPIO33</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="345,252 440,252"/>
+<text class="s" x="339" y="256" font-size="11" text-anchor="end">nSLPR</text>
+<text class="s" x="448" y="256" font-size="11" text-anchor="start">GPIO13</text>
+<polyline class="v5" fill="none" stroke-width="1.6" points="345,278 440,278"/>
+<text class="s" x="339" y="282" font-size="11" text-anchor="end">VREG 5V</text>
+<text class="s" x="448" y="282" font-size="11" text-anchor="start">5V</text>
+<polyline class="gnd" fill="none" stroke-width="1.6" points="345,304 440,304"/>
+<text class="s" x="339" y="308" font-size="11" text-anchor="end">GND</text>
+<text class="s" x="448" y="308" font-size="11" text-anchor="start">GND</text>
+<rect class="box" x="215" y="380" width="130" height="180" rx="6" stroke-width="1.2"/>
+<text class="t" x="280.0" y="360" font-size="12" font-weight="600" text-anchor="middle">Wheel encoders</text>
+<text class="m" x="280.0" y="373" font-size="10.5" text-anchor="middle">on the motor shafts, 12 CPR</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="345,402 440,402"/>
+<text class="s" x="339" y="406" font-size="11" text-anchor="end">L  A</text>
+<text class="s" x="448" y="406" font-size="11" text-anchor="start">GPIO18</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="345,428 440,428"/>
+<text class="s" x="339" y="432" font-size="11" text-anchor="end">L  B</text>
+<text class="s" x="448" y="432" font-size="11" text-anchor="start">GPIO19</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="345,454 440,454"/>
+<text class="s" x="339" y="458" font-size="11" text-anchor="end">R  A</text>
+<text class="s" x="448" y="458" font-size="11" text-anchor="start">GPIO23</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="345,480 440,480"/>
+<text class="s" x="339" y="484" font-size="11" text-anchor="end">R  B</text>
+<text class="s" x="448" y="484" font-size="11" text-anchor="start">GPIO4</text>
+<polyline class="v3" fill="none" stroke-width="1.6" points="345,506 440,506"/>
+<text class="s" x="339" y="510" font-size="11" text-anchor="end">VCC</text>
+<text class="s" x="448" y="510" font-size="11" text-anchor="start">3V3</text>
+<polyline class="gnd" fill="none" stroke-width="1.6" points="345,532 440,532"/>
+<text class="s" x="339" y="536" font-size="11" text-anchor="end">GND</text>
+<text class="s" x="448" y="536" font-size="11" text-anchor="start">GND</text>
+<rect class="box" x="730" y="110" width="130" height="120" rx="6" stroke-width="1.2"/>
+<text class="t" x="795.0" y="90" font-size="12" font-weight="600" text-anchor="middle">HC-SR04 sonar</text>
+<text class="m" x="795.0" y="103" font-size="10.5" text-anchor="middle">front, 5 V</text>
+<text class="s" x="738" y="136" font-size="11" text-anchor="start">TRIG</text>
+<text class="s" x="738" y="162" font-size="11" text-anchor="start">ECHO</text>
+<text class="s" x="852" y="188" font-size="11" text-anchor="end">VCC</text>
+<text class="s" x="852" y="214" font-size="11" text-anchor="end">GND</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="600,132 730,132"/>
+<text class="s" x="592" y="136" font-size="11" text-anchor="end">GPIO14</text>
+<text class="s" x="592" y="162" font-size="11" text-anchor="end">GPIO34</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="600,158 645,158"/>
+<circle class="s" cx="645" cy="158" r="3"/>
+<polyline class="sig" fill="none" stroke-width="1.6" points="645,158 730,158"/>
+<rect class="res" x="674.5" y="153" width="26" height="10" stroke-width="1.4"/>
+<text class="m" x="687.5" y="148" font-size="10" text-anchor="middle">1 kΩ</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="645,158 645,215"/>
+<rect class="res" x="640" y="173.5" width="10" height="26" stroke-width="1.4"/>
+<text class="m" x="654" y="190.5" font-size="10" text-anchor="start">2 kΩ</text>
+<polyline class="gnd" fill="none" stroke-width="1.6" points="645,215 645,223"/>
+<polyline class="gnd" fill="none" stroke-width="1.4" points="637,223 653,223"/>
+<polyline class="gnd" fill="none" stroke-width="1.4" points="640,226 650,226"/>
+<polyline class="gnd" fill="none" stroke-width="1.4" points="643,229 647,229"/>
+<polyline class="v5" fill="none" stroke-width="1.6" points="860,184 878,184"/>
+<text class="f5" x="882" y="188" font-size="11" text-anchor="start">5V</text>
+<polyline class="gnd" fill="none" stroke-width="1.6" points="860,210 878,210"/>
+<polyline class="gnd" fill="none" stroke-width="1.6" points="878,210 878,218"/>
+<polyline class="gnd" fill="none" stroke-width="1.4" points="870,218 886,218"/>
+<polyline class="gnd" fill="none" stroke-width="1.4" points="873,221 883,221"/>
+<polyline class="gnd" fill="none" stroke-width="1.4" points="876,224 880,224"/>
+<text class="m" x="615" y="266" font-size="10" text-anchor="start">GPIO34 is input-only and not 5 V tolerant:</text>
+<text class="m" x="615" y="280" font-size="10" text-anchor="start">the divider brings ECHO down to 3.3 V</text>
+<rect class="box" x="730" y="340" width="130" height="160" rx="6" stroke-width="1.2"/>
+<text class="t" x="795.0" y="320" font-size="12" font-weight="600" text-anchor="middle">BNO055 IMU</text>
+<text class="m" x="795.0" y="333" font-size="10.5" text-anchor="middle">I2C 0x28 / 0x29, 3.3 V</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="600,362 730,362"/>
+<text class="s" x="738" y="366" font-size="11" text-anchor="start">SDA</text>
+<text class="s" x="592" y="366" font-size="11" text-anchor="end">GPIO21</text>
+<polyline class="sig" fill="none" stroke-width="1.6" points="600,388 730,388"/>
+<text class="s" x="738" y="392" font-size="11" text-anchor="start">SCL</text>
+<text class="s" x="592" y="392" font-size="11" text-anchor="end">GPIO22</text>
+<polyline class="v3" fill="none" stroke-width="1.6" points="600,414 730,414"/>
+<text class="s" x="738" y="418" font-size="11" text-anchor="start">VIN</text>
+<text class="s" x="592" y="418" font-size="11" text-anchor="end">3V3</text>
+<polyline class="gnd" fill="none" stroke-width="1.6" points="600,440 730,440"/>
+<text class="s" x="738" y="444" font-size="11" text-anchor="start">GND</text>
+<text class="s" x="592" y="444" font-size="11" text-anchor="end">GND</text>
+<text class="s" x="852" y="444" font-size="11" text-anchor="end">PS0</text>
+<text class="s" x="852" y="470" font-size="11" text-anchor="end">PS1</text>
+<polyline class="gnd" fill="none" stroke-width="1.6" points="860,440 882,440 882,466"/>
+<polyline class="gnd" fill="none" stroke-width="1.6" points="860,466 882,466"/>
+<polyline class="gnd" fill="none" stroke-width="1.6" points="882,466 882,474"/>
+<polyline class="gnd" fill="none" stroke-width="1.4" points="874,474 890,474"/>
+<polyline class="gnd" fill="none" stroke-width="1.4" points="877,477 887,477"/>
+<polyline class="gnd" fill="none" stroke-width="1.4" points="880,480 884,480"/>
+<text class="m" x="795" y="524" font-size="10" text-anchor="middle">PS0 and PS1 to GND select I2C mode</text>
+<polyline class="sig" fill="none" stroke-width="2.4000000000000004" points="24,615 46,615"/>
+<text class="s" x="52" y="619" font-size="12" text-anchor="start">signal</text>
+<polyline class="v5" fill="none" stroke-width="2.4000000000000004" points="122.4,615 144.4,615"/>
+<text class="s" x="150.4" y="619" font-size="12" text-anchor="start">battery / 5 V</text>
+<polyline class="v3" fill="none" stroke-width="2.4000000000000004" points="272.6,615 294.6,615"/>
+<text class="s" x="300.6" y="619" font-size="12" text-anchor="start">3.3 V</text>
+<polyline class="gnd" fill="none" stroke-width="2.4000000000000004" points="363.6,615 385.6,615"/>
+<text class="s" x="391.6" y="619" font-size="12" text-anchor="start">ground</text>
+<polyline class="sig" fill="none" stroke-width="3.2" points="462.0,615 484.0,615"/>
+<text class="s" x="490.0" y="619" font-size="12" text-anchor="start">motor power</text>
+</svg>

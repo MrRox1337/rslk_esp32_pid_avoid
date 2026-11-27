@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1010 760" width="1010" height="760" role="img" aria-label="Layered firmware architecture: user interfaces, communication, behaviour, control, drivers and hardware">
+<style>
+.bg{fill:#fcfcfb}.t{fill:#0b0b0b}.s{fill:#52514e}.m{fill:#898781}
+.box{fill:#f3f2ee;stroke:#898781}.hw{fill:#fbe9e1;stroke:#eb6834}.ui{fill:#e8f0fb;stroke:#2a78d6}
+.lay{fill:none;stroke:#c3c2b7;stroke-dasharray:4 4}
+.ar{stroke:#52514e}.ah{fill:#52514e}.ph{stroke:#eb6834}.phh{fill:#eb6834}.rc{stroke:#898781}.rch{fill:#898781}
+@media (prefers-color-scheme:dark){
+.bg{fill:#1a1a19}.t{fill:#f0efec}.s{fill:#c3c2b7}.box{fill:#262624;stroke:#6b6a65}
+.hw{fill:#35211a;stroke:#d95926}.ui{fill:#1d2a3b;stroke:#3987e5}.lay{stroke:#383835}
+.ar{stroke:#c3c2b7}.ah{fill:#c3c2b7}.ph{stroke:#d95926}.phh{fill:#d95926}}
+text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+</style>
+<rect class="bg" width="1010" height="760" rx="8"/>
+<text class="t" x="24" y="30" font-size="15" font-weight="600">System architecture</text>
+<text class="s" x="24" y="49" font-size="12">Firmware modules on the ESP32, grouped in layers. Arrows show which module calls or feeds which</text>
+<rect class="lay" x="24" y="62" width="846" height="76" rx="6"/>
+<text class="m" x="36" y="104.0" font-size="11.5" text-anchor="start" font-weight="600">Users</text>
+<rect class="lay" x="24" y="142" width="846" height="86" rx="6"/>
+<text class="m" x="36" y="189.0" font-size="11.5" text-anchor="start" font-weight="600">Communication</text>
+<rect class="lay" x="24" y="252" width="846" height="101" rx="6"/>
+<text class="m" x="36" y="306.5" font-size="11.5" text-anchor="start" font-weight="600">Behaviour</text>
+<rect class="lay" x="24" y="377" width="846" height="86" rx="6"/>
+<text class="m" x="36" y="424.0" font-size="11.5" text-anchor="start" font-weight="600">Control</text>
+<rect class="lay" x="24" y="492" width="846" height="66" rx="6"/>
+<text class="m" x="36" y="529.0" font-size="11.5" text-anchor="start" font-weight="600">Drivers</text>
+<rect class="lay" x="24" y="582" width="846" height="66" rx="6"/>
+<text class="m" x="36" y="619.0" font-size="11.5" text-anchor="start" font-weight="600">Hardware</text>
+<rect class="ui" x="160" y="70" width="280" height="60" rx="6" stroke-width="1.2"/>
+<text class="t" x="300.0" y="96.5" font-size="12" text-anchor="middle" font-weight="600">Web browser</text>
+<text class="s" x="300.0" y="111.5" font-size="10.5" text-anchor="middle">phone or PC: control page</text>
+<rect class="ui" x="540" y="70" width="130" height="60" rx="6" stroke-width="1.2"/>
+<text class="t" x="605.0" y="96.5" font-size="12" text-anchor="middle" font-weight="600">Serial monitor</text>
+<text class="s" x="605.0" y="111.5" font-size="10.5" text-anchor="middle">USB, 115200 baud</text>
+<rect class="ui" x="690" y="70" width="130" height="60" rx="6" stroke-width="1.2"/>
+<text class="t" x="755.0" y="96.5" font-size="12" text-anchor="middle" font-weight="600">PID tuner</text>
+<text class="s" x="755.0" y="111.5" font-size="10.5" text-anchor="middle">tools/pid_tuner.py</text>
+<rect class="box" x="160" y="150" width="280" height="70" rx="6" stroke-width="1.2"/>
+<text class="t" x="300.0" y="174.0" font-size="12" text-anchor="middle" font-weight="600">web.*  +  web_page.h</text>
+<text class="s" x="300.0" y="189.0" font-size="10.5" text-anchor="middle">WiFi (hotspot or own AP), mDNS rslk.local</text>
+<text class="s" x="300.0" y="204.0" font-size="10.5" text-anchor="middle">/  /drive  /speed  /status  /cmd  /rec</text>
+<rect class="box" x="540" y="150" width="280" height="70" rx="6" stroke-width="1.2"/>
+<text class="t" x="680.0" y="174.0" font-size="12" text-anchor="middle" font-weight="600">console.*</text>
+<text class="s" x="680.0" y="189.0" font-size="10.5" text-anchor="middle">command interpreter (serial and web)</text>
+<text class="s" x="680.0" y="204.0" font-size="10.5" text-anchor="middle">telemetry, rec dump</text>
+<rect class="box" x="160" y="260" width="660" height="85" rx="6" stroke-width="1.2"/>
+<text class="t" x="490.0" y="291.5" font-size="12" text-anchor="middle" font-weight="600">behavior.*</text>
+<text class="s" x="490.0" y="306.5" font-size="10.5" text-anchor="middle">modes IDLE / AUTO / MANUAL  ·  overtake state machine CRUISE → PASS_OUT → PASS_BACK</text>
+<text class="s" x="490.0" y="321.5" font-size="10.5" text-anchor="middle">odometry (x, lane offset y, heading ψ)  ·  steering  ·  manual heading hold  ·  flight recorder</text>
+<rect class="box" x="160" y="385" width="320" height="70" rx="6" stroke-width="1.2"/>
+<text class="t" x="320.0" y="409.0" font-size="12" text-anchor="middle" font-weight="600">control.*  +  pid.h</text>
+<text class="s" x="320.0" y="424.0" font-size="10.5" text-anchor="middle">setpoint ramps  ·  wheel-sync PID</text>
+<text class="s" x="320.0" y="439.0" font-size="10.5" text-anchor="middle">wheel speed PIDs + feedforward  ·  cal</text>
+<rect class="box" x="160" y="500" width="150" height="50" rx="6" stroke-width="1.2"/>
+<text class="t" x="235.0" y="521.5" font-size="12" text-anchor="middle" font-weight="600">motors.*</text>
+<text class="s" x="235.0" y="536.5" font-size="10.5" text-anchor="middle">DRV8838, 20 kHz PWM</text>
+<rect class="box" x="330" y="500" width="150" height="50" rx="6" stroke-width="1.2"/>
+<text class="t" x="405.0" y="521.5" font-size="12" text-anchor="middle" font-weight="600">encoders.*</text>
+<text class="s" x="405.0" y="536.5" font-size="10.5" text-anchor="middle">PCNT, 4× quadrature</text>
+<rect class="box" x="500" y="500" width="150" height="50" rx="6" stroke-width="1.2"/>
+<text class="t" x="575.0" y="521.5" font-size="12" text-anchor="middle" font-weight="600">sonar.*</text>
+<text class="s" x="575.0" y="536.5" font-size="10.5" text-anchor="middle">HC-SR04, median of 3</text>
+<rect class="box" x="670" y="500" width="150" height="50" rx="6" stroke-width="1.2"/>
+<text class="t" x="745.0" y="521.5" font-size="12" text-anchor="middle" font-weight="600">imu.*</text>
+<text class="s" x="745.0" y="536.5" font-size="10.5" text-anchor="middle">BNO055, IMUPLUS</text>
+<rect class="hw" x="160" y="590" width="150" height="50" rx="6" stroke-width="1.2"/>
+<text class="t" x="235.0" y="611.5" font-size="12" text-anchor="middle" font-weight="600">2 × DRV8838</text>
+<text class="s" x="235.0" y="626.5" font-size="10.5" text-anchor="middle">left and right motors</text>
+<rect class="hw" x="330" y="590" width="150" height="50" rx="6" stroke-width="1.2"/>
+<text class="t" x="405.0" y="611.5" font-size="12" text-anchor="middle" font-weight="600">Wheel encoders</text>
+<text class="s" x="405.0" y="626.5" font-size="10.5" text-anchor="middle">A/B per wheel</text>
+<rect class="hw" x="500" y="590" width="150" height="50" rx="6" stroke-width="1.2"/>
+<text class="t" x="575.0" y="611.5" font-size="12" text-anchor="middle" font-weight="600">HC-SR04</text>
+<text class="s" x="575.0" y="626.5" font-size="10.5" text-anchor="middle">front sonar</text>
+<rect class="hw" x="670" y="590" width="150" height="50" rx="6" stroke-width="1.2"/>
+<text class="t" x="745.0" y="611.5" font-size="12" text-anchor="middle" font-weight="600">BNO055</text>
+<text class="s" x="745.0" y="626.5" font-size="10.5" text-anchor="middle">I2C 21/22</text>
+<rect class="box" x="885" y="150" width="110" height="70" rx="6" stroke-width="1.2"/>
+<text class="t" x="940.0" y="174.0" font-size="12" text-anchor="middle" font-weight="600">settings.*</text>
+<text class="s" x="940.0" y="189.0" font-size="10.5" text-anchor="middle">NVS flash</text>
+<text class="s" x="940.0" y="204.0" font-size="10.5" text-anchor="middle">Preferences</text>
+<rect class="box" x="885" y="385" width="110" height="70" rx="6" stroke-width="1.2"/>
+<text class="t" x="940.0" y="409.0" font-size="12" text-anchor="middle" font-weight="600">config.h</text>
+<text class="s" x="940.0" y="424.0" font-size="10.5" text-anchor="middle">pins, defaults,</text>
+<text class="s" x="940.0" y="439.0" font-size="10.5" text-anchor="middle">geometry</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="300,130 300,150"/>
+<polygon class="ah" points="300,150 295.5,142 304.5,142"/>
+<text class="m" x="306" y="144" font-size="10.5" text-anchor="start">HTTP</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="605,130 605,150"/>
+<polygon class="ah" points="605,150 600.5,142 609.5,142"/>
+<text class="m" x="611" y="144" font-size="10.5" text-anchor="start">USB serial</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="755,130 755,150"/>
+<polygon class="ah" points="755,150 750.5,142 759.5,142"/>
+<text class="m" x="761" y="144" font-size="10.5" text-anchor="start">USB serial</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="440,185 540,185"/>
+<polygon class="ah" points="540,185 532,180.5 532,189.5"/>
+<text class="m" x="490" y="179" font-size="10.5" text-anchor="middle">/cmd</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="820,185 885,185"/>
+<polygon class="ah" points="885,185 877,180.5 877,189.5"/>
+<text class="m" x="852" y="179" font-size="10.5" text-anchor="middle">save / load</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="240,220 240,260"/>
+<polygon class="ah" points="240,260 235.5,252 244.5,252"/>
+<text class="m" x="246" y="244" font-size="10.5" text-anchor="start">drive pad, cruise speed</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="660,220 660,260"/>
+<polygon class="ah" points="660,260 655.5,252 664.5,252"/>
+<text class="m" x="666" y="244" font-size="10.5" text-anchor="start">go, stop, m S T</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="800,220 800,238 845,238 845,472 420,472 420,455"/>
+<polygon class="ah" points="420,455 415.5,463 424.5,463"/>
+<text class="m" x="630" y="467" font-size="10.5" text-anchor="middle">gains, cal</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="210,345 210,385"/>
+<polygon class="ah" points="210,385 205.5,377 214.5,377"/>
+<text class="m" x="216" y="369" font-size="10.5" text-anchor="start">drive(speed, turn)</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="380,385 380,345"/>
+<polygon class="ah" points="380,345 375.5,353 384.5,353"/>
+<text class="m" x="386" y="369" font-size="10.5" text-anchor="start">wheel travel</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="235,455 235,500"/>
+<polygon class="ah" points="235,500 230.5,492 239.5,492"/>
+<text class="m" x="241" y="485" font-size="10.5" text-anchor="start">PWM L, R</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="380,500 380,455"/>
+<polygon class="ah" points="380,455 375.5,463 384.5,463"/>
+<text class="m" x="386" y="485" font-size="10.5" text-anchor="start">tick counts</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="575,500 575,345"/>
+<polygon class="ah" points="575,345 570.5,353 579.5,353"/>
+<text class="m" x="581" y="490" font-size="10.5" text-anchor="start">distance</text>
+<polyline class="ar" fill="none" stroke-width="1.6" points="745,500 745,345"/>
+<polygon class="ah" points="745,345 740.5,353 749.5,353"/>
+<text class="m" x="751" y="490" font-size="10.5" text-anchor="start">heading</text>
+<polyline class="ph" fill="none" stroke-width="1.6" points="235,550 235,590"/>
+<polygon class="phh" points="235,590 230.5,582 239.5,582"/>
+<polyline class="ph" fill="none" stroke-width="1.6" points="405,590 405,550"/>
+<polygon class="phh" points="405,550 400.5,558 409.5,558"/>
+<polyline class="ph" fill="none" stroke-width="1.6" points="560,550 560,590"/>
+<polygon class="phh" points="560,590 555.5,582 564.5,582"/>
+<polyline class="ph" fill="none" stroke-width="1.6" points="590,590 590,550"/>
+<polygon class="phh" points="590,550 585.5,558 594.5,558"/>
+<polyline class="ph" fill="none" stroke-width="1.6" points="745,550 745,590"/>
+<polygon class="phh" points="745,590 740.5,582 749.5,582"/>
+<polyline class="ph" fill="none" stroke-width="1.6" points="775,590 775,550"/>
+<polygon class="phh" points="775,550 770.5,558 779.5,558"/>
+<text class="t" x="24" y="682" font-size="12" text-anchor="start" font-weight="600">Main loop (rslk_esp32_pid_avoid.ino), no RTOS tasks of its own:</text>
+<text class="s" x="24" y="702" font-size="12" text-anchor="start">consoleStep() → webStep() → sonarUpdate() every 60 ms → imuUpdate() every 10 ms → behaviorStep() → controlUpdate() every 10 ms (100 Hz)</text>
+<line class="ar" x1="24" x2="48" y1="738" y2="738" stroke-width="2"/>
+<text class="s" x="54" y="742" font-size="12" text-anchor="start">call or data</text>
+<line class="ph" x1="163.6" x2="187.6" y1="738" y2="738" stroke-width="2"/>
+<text class="s" x="193.6" y="742" font-size="12" text-anchor="start">electrical signal</text>
+</svg>
